@@ -110,3 +110,14 @@ void mbl_mw_settings_set_connection_parameters(const MblMwMetaWearBoard *board, 
     memcpy(command + 2, parameters, sizeof(parameters));
     SEND_COMMAND;
 }
+
+void mbl_mw_settings_add_whitelist_address(const MblMwMetaWearBoard *board, uint8_t index, const MblMwBtleAddress *address) {
+    uint8_t command[10]= {MBL_MW_MODULE_SETTINGS, ORDINAL(SettingsRegister::WHITELIST_ADDRESSES), index};
+    memcpy(command + 3, address, sizeof(MblMwBtleAddress));
+    SEND_COMMAND;
+}
+
+void mbl_mw_settings_set_whitelist_filter_mode(const MblMwMetaWearBoard *board, MblMwWhitelistFilter mode) {
+    uint8_t command[3]= {MBL_MW_MODULE_SETTINGS, ORDINAL(SettingsRegister::WHITELIST_FILTER_MODE), static_cast<uint8_t>(mode)};
+    SEND_COMMAND;
+}

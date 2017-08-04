@@ -4,6 +4,7 @@
 var ref = require('ref');
 var ffi = require('ffi');
 var Struct = require('ref-struct');
+var ArrayType = require('ref-array');
 var Enum = require('enum');
 var LIBMETAWEAR_PATH = require('./libmetawear-path');
 
@@ -475,6 +476,14 @@ var BaroBoschIirFilter = new Enum({
 }, ref.types.int);
 BaroBoschIirFilter.alignment = 4
 
+var WhitelistFilter = new Enum({
+  'ALLOW_FROM_ANY': 0,
+  'SCAN_REQUESTS': 1,
+  'CONNECTION_REQUESTS': 2,
+  'SCAN_AND_CONNECTION_REQUESTS': 3
+}, ref.types.int);
+WhitelistFilter.alignment = 4;
+
 var FnVoid_VoidP_Int = ffi.Function(ref.types.void, [ref.refType(ref.types.void), ref.types.int32]);
 var FnInt_VoidP_UByteP_UByte = ffi.Function(ref.types.int32, [ref.refType(ref.types.void), ref.refType(ref.types.uint8), ref.types.uint8]);
 var MetaWearBoard = ref.types.void;
@@ -604,6 +613,12 @@ var DfuDelegate = Struct({
   'on_transfer_percentage': FnVoid_Int,
   'on_successful_file_transferred': FnVoid,
   'on_error': FnVoid_charP
+});
+
+var Uint8Array6 = ArrayType(ref.types.uint8, 6);
+var BtleAddress = Struct({
+  'address_type': ref.types.uint8,
+  'address': Uint8Array6
 });
 
 function Const() {
@@ -1145,7 +1160,11 @@ var Lib = ffi.Library(LIBMETAWEAR_PATH, {
 
   'mbl_mw_datasignal_read': [ref.types.void, [ref.refType(DataSignal)]],
 
-  'mbl_mw_acc_get_packed_acceleration_data_signal': [ref.refType(DataSignal), [ref.refType(MetaWearBoard)]]
+  'mbl_mw_acc_get_packed_acceleration_data_signal': [ref.refType(DataSignal), [ref.refType(MetaWearBoard)]],
+
+  'mbl_mw_settings_add_whitelist_address': [ref.types.void, [ref.refType(MetaWearBoard), ref.types.uint8, ref.refType(BtleAddress)]],
+
+  'mbl_mw_settings_set_whitelist_filter_mode': [ref.types.void, [ref.refType(MetaWearBoard), WhitelistFilter]]
 });
 
 module.exports = {
@@ -1236,5 +1255,8 @@ module.exports = {
   LedPattern,
   CorrectedCartesianFloat,
   BatteryState,
-  EulerAngles
+  EulerAngles,
+  WhitelistFilter,
+  BtleAddress,
+  Uint8Array6
 };
