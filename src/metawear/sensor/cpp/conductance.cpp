@@ -15,17 +15,19 @@ using std::forward_as_tuple;
 using std::piecewise_construct;
 
 void init_conductance_module(MblMwMetaWearBoard *board) {
-    uint8_t num_channels = mbl_mw_conductance_get_num_channels(board);
-    for(uint8_t channel = 0; channel < num_channels; channel++) {
-        ResponseHeader header(MBL_MW_MODULE_CONDUCTANCE, READ_REGISTER(ORDINAL(ConductanceRegister::CONDUCTANCE)), channel);
-        if (!board->module_events.count(header)) {
-             board->module_events[header] = new MblMwDataSignal(header, board, DataInterpreter::UINT32, 
-                     FirmwareConverter::DEFAULT, 1, 4, 0, 0);
+    if (board->module_info.count(MBL_MW_MODULE_CONDUCTANCE) && board->module_info.at(MBL_MW_MODULE_CONDUCTANCE).present) {
+        uint8_t num_channels = mbl_mw_conductance_get_num_channels(board);
+        for(uint8_t channel = 0; channel < num_channels; channel++) {
+            ResponseHeader header(MBL_MW_MODULE_CONDUCTANCE, READ_REGISTER(ORDINAL(ConductanceRegister::CONDUCTANCE)), channel);
+            if (!board->module_events.count(header)) {
+                board->module_events[header] = new MblMwDataSignal(header, board, DataInterpreter::UINT32, 
+                        FirmwareConverter::DEFAULT, 1, 4, 0, 0);
+            }
         }
-    }
 
-    board->responses.emplace(piecewise_construct, forward_as_tuple(MBL_MW_MODULE_CONDUCTANCE, READ_REGISTER(ORDINAL(ConductanceRegister::CONDUCTANCE))),
-        forward_as_tuple(response_handler_data_with_id));
+        board->responses.emplace(piecewise_construct, forward_as_tuple(MBL_MW_MODULE_CONDUCTANCE, READ_REGISTER(ORDINAL(ConductanceRegister::CONDUCTANCE))),
+            forward_as_tuple(response_handler_data_with_id));
+    }
 }
 
 MblMwDataSignal* mbl_mw_conductance_get_data_signal(const MblMwMetaWearBoard *board, uint8_t channel) {
