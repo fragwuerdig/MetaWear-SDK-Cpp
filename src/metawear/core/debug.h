@@ -47,7 +47,7 @@ METAWEAR_API void mbl_mw_debug_set_stack_overflow_assertion(const MblMwMetaWearB
  * @param board     Calling object
  * @param handler   Callback function for handling the received data
  */
-METAWEAR_API void mbl_mw_debug_read_stack_overflow_state(const MblMwMetaWearBoard *board, MblMwFnData handler);
+METAWEAR_API void mbl_mw_debug_read_stack_overflow_state(const MblMwMetaWearBoard *board, void *context, MblMwFnData handler);
 
 /**
  * Reads the internal queues' current usage statistics; data is returned as a byte array.  
@@ -55,7 +55,7 @@ METAWEAR_API void mbl_mw_debug_read_stack_overflow_state(const MblMwMetaWearBoar
  * @param board     Calling object
  * @param handler   Callback function for handling the received data
  */
-METAWEAR_API void mbl_mw_debug_read_schedule_queue_usage(const MblMwMetaWearBoard *board, MblMwFnData handler);
+METAWEAR_API void mbl_mw_debug_read_schedule_queue_usage(const MblMwMetaWearBoard *board, void *context, MblMwFnData handler);
 
 #ifdef	__cplusplus
 }

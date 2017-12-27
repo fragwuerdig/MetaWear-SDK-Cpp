@@ -63,7 +63,7 @@ METAWEAR_API void mbl_mw_metawearboard_set_time_for_response(MblMwMetaWearBoard*
  * @param board         Board to initialize
  * @param initialized   Callback function to be executed when the board is initialized
  */
-METAWEAR_API void mbl_mw_metawearboard_initialize(MblMwMetaWearBoard *board, MblMwFnBoardPtrInt initialized);
+METAWEAR_API void mbl_mw_metawearboard_initialize(MblMwMetaWearBoard *board, void *context, MblMwFnBoardPtrInt initialized);
 /**
  * Removes all data processors and timers from the MetaWear board
  * @param board         Board to tear down
@@ -118,17 +118,18 @@ METAWEAR_API int32_t mbl_mw_metawearboard_deserialize(MblMwMetaWearBoard* board,
  * @param board         Calling object
  * @param created       Callback function to be executed once the task is completed.
  */
-METAWEAR_API void mbl_mw_metawearboard_create_anonymous_datasignals(MblMwMetaWearBoard* board, MblMwFnAnonSignalArray created);
+METAWEAR_API void mbl_mw_metawearboard_create_anonymous_datasignals(MblMwMetaWearBoard* board, void *context, MblMwFnAnonSignalArray created);
 
 /**
  * Wrapper class containing functions for receiving callbacks throughout the DFU process
  */
 typedef struct {
-    void (*on_dfu_started)();
-    void (*on_dfu_cancelled)();
-    void (*on_transfer_percentage)(int32_t percentage);
-    void (*on_successful_file_transferred)();
-    void (*on_error)(const char *errorMessage);
+    void *context;
+    void (*on_dfu_started)(void *context);
+    void (*on_dfu_cancelled)(void *context);
+    void (*on_transfer_percentage)(void *context, int32_t percentage);
+    void (*on_successful_file_transferred)(void *context);
+    void (*on_error)(void *context, const char *errorMessage);
 } MblMwDfuDelegate;
 
 /**

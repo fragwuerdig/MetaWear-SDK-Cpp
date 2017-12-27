@@ -57,6 +57,7 @@ struct SensorFusionState {
 
 struct SensorFusionTransientState {
     MblMwFnBoardPtrInt read_config_completed;
+    void *read_config_context;
 };
 
 static unordered_map<const MblMwMetaWearBoard*, SensorFusionTransientState> transient_states;
@@ -66,8 +67,10 @@ static int32_t received_config_response(MblMwMetaWearBoard *board, const uint8_t
     memcpy(&(state->config), response + 2, sizeof(state->config));
 
     auto callback = transient_states[board].read_config_completed;
+    auto context = transient_states[board].read_config_context;
     transient_states[board].read_config_completed = nullptr;
-    callback(board, MBL_MW_STATUS_OK);
+    transient_states[board].read_config_context = nullptr;
+    callback(context, board, MBL_MW_STATUS_OK);
 
     return 0;
 }
@@ -197,7 +200,8 @@ void mbl_mw_sensor_fusion_write_config(MblMwMetaWearBoard* board) {
     }
 }
 
-void mbl_mw_sensor_fusion_read_config(const MblMwMetaWearBoard* board, MblMwFnBoardPtrInt completed) {
+void mbl_mw_sensor_fusion_read_config(const MblMwMetaWearBoard* board, void *context, MblMwFnBoardPtrInt completed) {
+    transient_states[board].read_config_context = context;
     transient_states[board].read_config_completed = completed;
     uint8_t command[2] = { MBL_MW_MODULE_SENSOR_FUSION, READ_REGISTER(ORDINAL(SensorFusionRegister::MODE)) };
     SEND_COMMAND;

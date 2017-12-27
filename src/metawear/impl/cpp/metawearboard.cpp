@@ -52,6 +52,7 @@
 #include "metawear/sensor/cpp/serialpassthrough_register.h"
 #include "metawear/sensor/cpp/sensor_fusion_private.h"
 #include "metawear/sensor/cpp/switch_private.h"
+#include "metawear/sensor/cpp/conductance_private.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -91,7 +92,7 @@ static bool invoke_signal_handler(MblMwDataSignal* signal, int64_t epoch, const 
     if (signal->handler != nullptr) {
         MblMwData* data = data_response_converters.at(signal->interpreter)(false, signal, response, len);
         data->epoch = epoch;
-        signal->handler(data);
+        signal->handler(signal->context, data);
         free(data->value);
         free(data);
         return true;
@@ -175,7 +176,7 @@ int32_t response_handler_packed_data(MblMwMetaWearBoard *board, const uint8_t *r
             MblMwData* data = data_response_converters.at(signal->interpreter)(false, signal, response + i, len - i);
             data->epoch= now;
 
-            signal->handler(data);
+            signal->handler(signal->context, data);
 
             free(data->value);
             free(data);
@@ -203,7 +204,7 @@ const vector<vector<uint8_t>> MODULE_DISCOVERY_CMDS= {
     {MBL_MW_MODULE_TIMER, READ_INFO_REGISTER},
     {MBL_MW_MODULE_I2C, READ_INFO_REGISTER},
     {MBL_MW_MODULE_MACRO, READ_INFO_REGISTER},
-    {MBL_MW_MODULE_GSR, READ_INFO_REGISTER},
+    {MBL_MW_MODULE_CONDUCTANCE, READ_INFO_REGISTER},
     {MBL_MW_MODULE_SETTINGS, READ_INFO_REGISTER},
     {MBL_MW_MODULE_BAROMETER, READ_INFO_REGISTER},
     {MBL_MW_MODULE_GYRO, READ_INFO_REGISTER},
@@ -311,7 +312,8 @@ static void(*INITIALIZE_FNS[])(MblMwMetaWearBoard*) = {
     init_switch_module,
     init_sensor_fusion_module,
     init_macro_module,
-    init_debug_module
+    init_debug_module,
+    init_conductance_module
 };
 static inline void service_discovery_completed(MblMwMetaWearBoard* board) {
     for (auto it : INITIALIZE_FNS) {
@@ -336,7 +338,7 @@ static inline void queue_next_query(MblMwMetaWearBoard *board) {
     }
 }
 
-static int32_t model_char_handler(const void* caller, const uint8_t* value, uint8_t length) {
+static int32_t model_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
     MblMwMetaWearBoard* board = (MblMwMetaWearBoard*) caller;
     ((MblMwMetaWearBoard*) caller)->module_number.assign(value, value + length);
     queue_next_query(board);
@@ -344,14 +346,14 @@ static int32_t model_char_handler(const void* caller, const uint8_t* value, uint
     return MBL_MW_STATUS_OK;
 }
 
-static int32_t firware_char_handler(const void* caller, const uint8_t* value, uint8_t length) {
+static int32_t firware_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
     MblMwMetaWearBoard* board = (MblMwMetaWearBoard*) caller;
     Version current(string(value, value + length));
 
     if (board->firmware_revision == current) {
         if (mbl_mw_metawearboard_is_initialized(board)) {
             board->initialized_timeout->cancel();
-            board->initialized(board, MBL_MW_STATUS_OK);
+            board->initialized(board->initialized_context, board, MBL_MW_STATUS_OK);
         } else {
             board->module_discovery_index = MODULE_DISCOVERY_CMDS.size();
             service_discovery_completed(board);
@@ -379,12 +381,12 @@ static int32_t firware_char_handler(const void* caller, const uint8_t* value, ui
         board->module_info.clear();
         board->module_discovery_index = -1;
     }
-    board->btle_conn.read_gatt_char(board, &DEV_INFO_MODEL_CHAR, model_char_handler);
+    board->btle_conn.read_gatt_char(board->btle_conn.context, board, &DEV_INFO_MODEL_CHAR, model_char_handler);
 
     return MBL_MW_STATUS_OK;
 }
 
-static int32_t char_changed_handler(const void* caller, const uint8_t* value, uint8_t length) {
+static int32_t char_changed_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
     MblMwMetaWearBoard* board = (MblMwMetaWearBoard*) caller;
     ResponseHeader header(value[0], value[1]);
 
@@ -399,16 +401,16 @@ static int32_t char_changed_handler(const void* caller, const uint8_t* value, ui
     }
 }
 
-static void enable_notify_ready(const void* caller, int32_t value) {
+static void enable_notify_ready(void *context, const void* caller, int32_t value) {
     auto board = (MblMwMetaWearBoard*) caller;
 
     if (value == MBL_MW_STATUS_OK) {
         board->initialized_timeout= ThreadPool::schedule([board](void) -> void {
-            board->initialized(board, MBL_MW_STATUS_ERROR_TIMEOUT);
+            board->initialized(board->initialized_context, board, MBL_MW_STATUS_ERROR_TIMEOUT);
         }, (MODULE_DISCOVERY_CMDS.size() + BOARD_DEV_INFO_CHARS.size() + 1) * board->time_per_response);
-        board->btle_conn.read_gatt_char(board, &DEV_INFO_FIRMWARE_CHAR, firware_char_handler);
+        board->btle_conn.read_gatt_char(board->btle_conn.context, board, &DEV_INFO_FIRMWARE_CHAR, firware_char_handler);
     } else {
-        board->initialized(board, MBL_MW_STATUS_ERROR_ENABLE_NOTIFY);
+        board->initialized(board->initialized_context, board, MBL_MW_STATUS_ERROR_ENABLE_NOTIFY);
     }
 }
 
@@ -416,7 +418,7 @@ const unordered_set<void(*)(MblMwMetaWearBoard*)> MODULE_DISCONNECT_HANDLERS = {
     disconnect_logging
 };
 
-static void disconnect_handler(const void* caller, int32_t value) {
+static void disconnect_handler(void *context, const void* caller, int32_t value) {
     auto board = (MblMwMetaWearBoard*) caller;
 
     for(auto it: MODULE_DISCONNECT_HANDLERS) {
@@ -424,12 +426,13 @@ static void disconnect_handler(const void* caller, int32_t value) {
     }
 }
 
-void mbl_mw_metawearboard_initialize(MblMwMetaWearBoard *board, MblMwFnBoardPtrInt initialized) {
+void mbl_mw_metawearboard_initialize(MblMwMetaWearBoard *board, void *context, MblMwFnBoardPtrInt initialized) {
+    board->initialized_context = context;
     board->initialized = initialized;
     board->dev_info_index = -1;
 
-    board->btle_conn.on_disconnect(board, disconnect_handler);
-    board->btle_conn.enable_notifications(board, &METAWEAR_SERVICE_NOTIFY_CHAR, char_changed_handler, enable_notify_ready);
+    board->btle_conn.on_disconnect(board->btle_conn.context, board, disconnect_handler);
+    board->btle_conn.enable_notifications(board->btle_conn.context, board, &METAWEAR_SERVICE_NOTIFY_CHAR, char_changed_handler, enable_notify_ready);
 }
 
 void mbl_mw_metawearboard_tear_down(MblMwMetaWearBoard *board) {
@@ -475,7 +478,7 @@ int32_t mbl_mw_connection_notify_char_changed(MblMwMetaWearBoard *board, const u
 }
 
 int32_t mbl_mw_metawearboard_notify_char_changed(MblMwMetaWearBoard *board, const uint8_t *value, uint8_t len) {
-    return char_changed_handler(board, value, len);
+    return char_changed_handler(board->btle_conn.context, board, value, len);
 }
 
 void mbl_mw_connection_char_read(MblMwMetaWearBoard *board, const MblMwGattChar *characteristic, const uint8_t *value, uint8_t length) {
@@ -484,15 +487,16 @@ void mbl_mw_connection_char_read(MblMwMetaWearBoard *board, const MblMwGattChar 
 
 void mbl_mw_metawearboard_char_read(MblMwMetaWearBoard *board, const MblMwGattChar *characteristic, const uint8_t *value, uint8_t length) {
     if (characteristic->uuid_high == DEV_INFO_FIRMWARE_CHAR.uuid_high && characteristic->uuid_low == DEV_INFO_FIRMWARE_CHAR.uuid_low) {
-        firware_char_handler(board, value, length);
+        firware_char_handler(board->btle_conn.context, board, value, length);
     } else if (characteristic->uuid_high == DEV_INFO_MODEL_CHAR.uuid_high && characteristic->uuid_low == DEV_INFO_MODEL_CHAR.uuid_low) {
-        model_char_handler(board, value, length);
+        model_char_handler(board->btle_conn.context, board, value, length);
     }
 }
 
 void send_command(const MblMwMetaWearBoard* board, const uint8_t* command, uint8_t len) {
     if (!record_command(board, command, len)) {
         board->btle_conn.write_gatt_char(
+            board->btle_conn.context,
             board, 
             command[0] == MBL_MW_MODULE_MACRO ? MBL_MW_GATT_CHAR_WRITE_WITH_RESPONSE : MBL_MW_GATT_CHAR_WRITE_WITHOUT_RESPONSE,
             &METAWEAR_COMMAND_CHAR, command, len
@@ -758,12 +762,12 @@ static bool has_suffix(const std::string &str, const std::string &suffix) {
     return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-static int32_t dfu_char_changed_handler(const void* caller, const uint8_t* value, uint8_t length) {
+static int32_t dfu_char_changed_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
     ((MblMwMetaWearBoard*) caller)->operations->processDFUResponse(value, length);
     return MBL_MW_STATUS_OK;
 }
 
-static void dfu_enable_notify_ready(const void* caller, int32_t value) {
+static void dfu_enable_notify_ready(void *context, const void* caller, int32_t value) {
     auto board = (MblMwMetaWearBoard*) caller;
 
     if (value == MBL_MW_STATUS_OK) {
@@ -780,30 +784,31 @@ static void dfu_enable_notify_ready(const void* caller, int32_t value) {
 void mbl_mw_metawearboard_perform_dfu(MblMwMetaWearBoard *board, const MblMwDfuDelegate *delegate, const char *filename) {
     board->operations.reset(new DfuOperations(board, delegate));
     board->filename = filename;
-    board->btle_conn.enable_notifications(board, &DFU_CONTROL_POINT_CHAR, dfu_char_changed_handler, dfu_enable_notify_ready);
+    board->btle_conn.enable_notifications(board->btle_conn.context, board, &DFU_CONTROL_POINT_CHAR, dfu_char_changed_handler, dfu_enable_notify_ready);
 }
 
-static void read_sensor_fusion_config_completed(MblMwMetaWearBoard* board, int32_t value) {
+static void read_sensor_fusion_config_completed(void *context, MblMwMetaWearBoard* board, int32_t value) {
     query_active_loggers(board);
 }
 
-static void read_gyro_config_completed(MblMwMetaWearBoard* board, int32_t value) {
+static void read_gyro_config_completed(void *context, MblMwMetaWearBoard* board, int32_t value) {
     if (mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_SENSOR_FUSION) != MBL_MW_MODULE_TYPE_NA) {
-        mbl_mw_sensor_fusion_read_config(board, read_sensor_fusion_config_completed);
+        mbl_mw_sensor_fusion_read_config(board, context, read_sensor_fusion_config_completed);
     } else {
-        read_sensor_fusion_config_completed(board, MBL_MW_STATUS_OK);
+        read_sensor_fusion_config_completed(context, board, MBL_MW_STATUS_OK);
     }
 }
 
-static void read_acc_config_completed(MblMwMetaWearBoard* board, int32_t value) {
+static void read_acc_config_completed(void *context, MblMwMetaWearBoard* board, int32_t value) {
     if (mbl_mw_metawearboard_lookup_module(board, MBL_MW_MODULE_GYRO) != MBL_MW_MODULE_TYPE_NA) {
-        mbl_mw_gyro_bmi160_read_config(board, read_gyro_config_completed);
+        mbl_mw_gyro_bmi160_read_config(board, context, read_gyro_config_completed);
     } else {
-        read_gyro_config_completed(board, MBL_MW_STATUS_OK);
+        read_gyro_config_completed(context, board, MBL_MW_STATUS_OK);
     }
 }
 
-void mbl_mw_metawearboard_create_anonymous_datasignals(MblMwMetaWearBoard* board, MblMwFnAnonSignalArray created) {
+void mbl_mw_metawearboard_create_anonymous_datasignals(MblMwMetaWearBoard* board, void *context, MblMwFnAnonSignalArray created) {
+    board->anon_signals_context = context;
     board->anon_signals_created = created;
-    mbl_mw_acc_read_config(board, read_acc_config_completed);
+    mbl_mw_acc_read_config(board, context, read_acc_config_completed);
 }

@@ -21,4 +21,4 @@ typedef struct MblMwEvent MblMwEvent;
  * @param event         Event to be used with the function
  * @param status        Status code passed into the function
  */
-typedef void(*MblMwFnEventPtrInt)(MblMwEvent* event, int32_t status);
+typedef void(*MblMwFnEventPtrInt)(void *context, MblMwEvent* event, int32_t status);

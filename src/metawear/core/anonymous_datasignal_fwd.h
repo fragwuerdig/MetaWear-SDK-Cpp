@@ -23,4 +23,4 @@ typedef struct MblMwAnonymousDataSignal MblMwAnonymousDataSignal;
  * @param anonymous_signals         Array of MblMwAnonymousDataSignal pointers
  * @param size                      Number of elements in the array
  */
-typedef void(*MblMwFnAnonSignalArray)(MblMwMetaWearBoard* board, MblMwAnonymousDataSignal** anonymous_signals, uint32_t size);
+typedef void(*MblMwFnAnonSignalArray)(void *context, MblMwMetaWearBoard* board, MblMwAnonymousDataSignal** anonymous_signals, uint32_t size);

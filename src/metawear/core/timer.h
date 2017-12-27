@@ -25,7 +25,7 @@ extern "C" {
  * @param delay             Zero if the tiemr should immediately fire, non-zero to delay the first event
  * @param received_timer    Callback function to be executed when the timer is created
  */
-METAWEAR_API void mbl_mw_timer_create(MblMwMetaWearBoard *board, uint32_t period, uint16_t repetitions, uint8_t delay, MblMwFnTimerPtr received_timer);
+METAWEAR_API void mbl_mw_timer_create(MblMwMetaWearBoard *board, uint32_t period, uint16_t repetitions, uint8_t delay, void *context, MblMwFnTimerPtr received_timer);
 /**
  * Creates a timer that will run indefinitely.  A pointer representing the timer will be passed to the user 
  * through a callback function
@@ -34,7 +34,7 @@ METAWEAR_API void mbl_mw_timer_create(MblMwMetaWearBoard *board, uint32_t period
  * @param delay             Zero if the tiemr should immediately fire, non-zero to delay the first event
  * @param received_timer    Callback function to be executed when the timer is created
  */
-METAWEAR_API void mbl_mw_timer_create_indefinite(MblMwMetaWearBoard *board, uint32_t period, uint8_t delay, MblMwFnTimerPtr received_timer);
+METAWEAR_API void mbl_mw_timer_create_indefinite(MblMwMetaWearBoard *board, uint32_t period, uint8_t delay, void *context, MblMwFnTimerPtr received_timer);
 /**
  * Retrieves the id value identifying the timer
  * @param timer             Timer to lookup

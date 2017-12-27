@@ -21,7 +21,7 @@ extern "C" {
  * @param source                Event the processor is counting
  * @param processor_created     Callback function to be executed when the processor is created
  */
-METAWEAR_API int32_t mbl_mw_dataprocessor_counter_create(MblMwEvent *source, MblMwFnDataProcessor processor_created);
+METAWEAR_API int32_t mbl_mw_dataprocessor_counter_create(MblMwEvent *source, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a counter with a specific output size.  A pointer representing the processor will be passed back 
  * to the user via a callback function.
@@ -29,7 +29,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_counter_create(MblMwEvent *source, Mbl
  * @param size                  Output size, between [1, 4] bytes
  * @param processor_created     Callback function to be executed when the processor is created
  */
-METAWEAR_API int32_t mbl_mw_dataprocessor_counter_create_size(MblMwEvent *source, uint8_t size, MblMwFnDataProcessor processor_created);
+METAWEAR_API int32_t mbl_mw_dataprocessor_counter_create_size(MblMwEvent *source, uint8_t size, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Overwrites the current count with a new value
  * @param counter           Counter processor to modify

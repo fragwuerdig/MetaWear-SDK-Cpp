@@ -40,9 +40,9 @@ static int32_t logging_response_readout_progress(MblMwMetaWearBoard *board, cons
 
 struct MblMwDataLogger : public MblMwAnonymousDataSignal {
     MblMwDataLogger(uint8_t** state_stream, bool deserialize_component, MblMwMetaWearBoard* board);
-    MblMwDataLogger(MblMwDataSignal* source, MblMwFnDataLoggerPtr logger_ready);
+    MblMwDataLogger(MblMwDataSignal* source, void *context, MblMwFnDataLoggerPtr logger_ready);
 
-    virtual void subscribe(MblMwFnData data_handler);
+    virtual void subscribe(void *context, MblMwFnData data_handler);
     virtual char* get_identifier() const {
         stringstream stream;
         MblMwDataSignal* current = source;
@@ -93,7 +93,9 @@ struct MblMwDataLogger : public MblMwAnonymousDataSignal {
 
     MblMwDataSignal* source;
     uint8_t n_req_entries;
+    void *data_context;
     MblMwFnData data_handler;
+    void *logger_context;
     MblMwFnDataLoggerPtr logger_ready;
     vector<uint8_t> entry_ids;
     unordered_map<uint8_t, queue<uint32_t>> entries;
@@ -141,7 +143,7 @@ static int32_t logging_response_time_received(MblMwMetaWearBoard *board, const u
     state->log_time_references.emplace(piecewise_construct, forward_as_tuple(response[6]), forward_as_tuple(tick, response[6]));
     state->latest_reset_uid = response[6];
 
-    board->initialized(board, MBL_MW_STATUS_OK);
+    board->initialized(board->initialized_context, board, MBL_MW_STATUS_OK);
     return MBL_MW_STATUS_OK;
 }
 
@@ -202,7 +204,7 @@ static void queue_next_logger(MblMwMetaWearBoard* board) {
     if (state->queryLogId < board->module_info.at(MBL_MW_MODULE_LOGGING).extra[0]) {
         state->pending_fns.push([=](void) -> void {
             state->timeout= ThreadPool::schedule([state, board](void) -> void {
-                board->anon_signals_created(board, nullptr, MBL_MW_STATUS_ERROR_TIMEOUT);
+                board->anon_signals_created(board->anon_signals_context, board, nullptr, MBL_MW_STATUS_ERROR_TIMEOUT);
                 state->create_next(true);
             }, board->time_per_response);
     
@@ -225,7 +227,7 @@ static void queue_next_logger(MblMwMetaWearBoard* board) {
             }
         }
 
-        board->anon_signals_created(board, state->anonymous_signals.data(), (uint32_t) state->anonymous_signals.size());
+        board->anon_signals_created(board->anon_signals_context, board, state->anonymous_signals.data(), (uint32_t) state->anonymous_signals.size());
     }
     state->create_next(true);
 }
@@ -250,7 +252,7 @@ static void log_source_discovered(shared_ptr<LoggerState> state, MblMwDataSignal
     }
 
     if (logger == nullptr || (offset != 0 && !state->nRemainingLoggers.count(source))) {
-        logger = new MblMwDataLogger(source, nullptr);
+        logger = new MblMwDataLogger(source, nullptr, nullptr);
     }
     logger->add_entry_id(state->queryLogId, true);
     state->data_loggers[state->queryLogId] = logger;
@@ -386,7 +388,7 @@ static int32_t logging_response_readout_notify(MblMwMetaWearBoard *board, const 
             if (state->data_loggers.count(entry_id)) {
                 state->data_loggers.at(entry_id)->process_log_data(entry_id, realtime, *data);
             } else if (state->log_download_handler.received_unknown_entry != nullptr) {
-                state->log_download_handler.received_unknown_entry(entry_id, realtime, (const uint8_t*) data, sizeof(*data));
+                state->log_download_handler.received_unknown_entry(state->log_download_handler.context, entry_id, realtime, (const uint8_t*) data, sizeof(*data));
             }
         }
     };
@@ -408,7 +410,7 @@ static int32_t logging_response_readout_progress(MblMwMetaWearBoard *board, cons
         state->rollback_timestamps.clear();
     }
     if (state->log_download_handler.received_progress_update != nullptr) {
-        state->log_download_handler.received_progress_update(entries_left, state->n_log_entries);
+        state->log_download_handler.received_progress_update(state->log_download_handler.context, entries_left, state->n_log_entries);
     }
     return 0;
 }
@@ -445,7 +447,7 @@ void TimeReference::serialize(vector<uint8_t>& state) const {
 }
 
 MblMwDataLogger::MblMwDataLogger(uint8_t** state_stream, bool deserialize_component, MblMwMetaWearBoard* board) : 
-        data_handler(nullptr), logger_ready(nullptr) {
+        data_context(nullptr), data_handler(nullptr), logger_context(nullptr), logger_ready(nullptr) {
     uint8_t signal_index;
     
     if (deserialize_component) {
@@ -471,11 +473,13 @@ MblMwDataLogger::MblMwDataLogger(uint8_t** state_stream, bool deserialize_compon
     (*state_stream)++;
 }
 
-MblMwDataLogger::MblMwDataLogger(MblMwDataSignal* source, MblMwFnDataLoggerPtr logger_ready) :
-        source(source), n_req_entries((source->length() - 1) / sizeof(uint32_t) + 1), data_handler(nullptr), logger_ready(logger_ready) {
+MblMwDataLogger::MblMwDataLogger(MblMwDataSignal* source, void *context, MblMwFnDataLoggerPtr logger_ready) :
+        source(source), n_req_entries((source->length() - 1) / sizeof(uint32_t) + 1), 
+        data_context(nullptr), data_handler(nullptr), logger_context(context), logger_ready(logger_ready) {
 }
 
-void MblMwDataLogger::subscribe(MblMwFnData data_handler) {
+void MblMwDataLogger::subscribe(void *context, MblMwFnData data_handler) {
+    this->data_context = context;
     this->data_handler = data_handler;
 }
 
@@ -493,7 +497,7 @@ void MblMwDataLogger::add_entry_id(uint8_t id, bool anonymous) {
         }
         state->next_logger = nullptr;
 
-        logger_ready(this);
+        logger_ready(logger_context, this);
 
         state->create_next(true);
     }
@@ -519,9 +523,9 @@ void MblMwDataLogger::process_log_data(uint8_t id, int64_t epoch, uint32_t data)
 
         MblMwFnData unhandled_callback;
         if (data_handler != nullptr) {
-            data_handler(data);
+            data_handler(data_context, data);
         } else if ((unhandled_callback= GET_LOGGER_STATE(source->owner)->log_download_handler.received_unhandled_entry) != nullptr) {
-            unhandled_callback(data);
+            unhandled_callback(GET_LOGGER_STATE(source->owner)->log_download_handler.context, data);
         }
 
         free(data->value);
@@ -651,6 +655,7 @@ void mbl_mw_logging_download(MblMwMetaWearBoard* board, uint8_t n_notifies, cons
         command[2]= 0x1;
         SEND_COMMAND;
     } else {
+        state->log_download_handler.context= nullptr;
         state->log_download_handler.received_progress_update= nullptr;
         state->log_download_handler.received_unknown_entry= nullptr;
         state->log_download_handler.received_unhandled_entry = nullptr;
@@ -686,7 +691,8 @@ void mbl_mw_logger_remove(MblMwDataLogger* loggable) {
     delete loggable;
 }
 
-void mbl_mw_logger_subscribe(MblMwDataLogger* loggable, MblMwFnData received_data) {
+void mbl_mw_logger_subscribe(MblMwDataLogger* loggable, void *context, MblMwFnData received_data) {
+    loggable->data_context = context;
     loggable->data_handler = received_data;
 }
 
@@ -694,16 +700,16 @@ char* mbl_mw_logger_generate_identifier(const MblMwDataLogger* signal) {
     return signal->get_identifier();
 }
 
-void mbl_mw_datasignal_log(MblMwDataSignal *signal, MblMwFnDataLoggerPtr logger_ready) {
+void mbl_mw_datasignal_log(MblMwDataSignal *signal, void *context, MblMwFnDataLoggerPtr logger_ready) {
     auto state= GET_LOGGER_STATE(signal->owner);
 
     state->pending_fns.push([=](void) -> void {
-        state->next_logger= new MblMwDataLogger(signal, logger_ready);
-        state->timeout= ThreadPool::schedule([state, logger_ready](void) -> void {
+        state->next_logger= new MblMwDataLogger(signal, context, logger_ready);
+        state->timeout= ThreadPool::schedule([context, state, logger_ready](void) -> void {
             delete state->next_logger;
             state->next_logger = nullptr;
 
-            logger_ready(nullptr);
+            logger_ready(context, nullptr);
             state->create_next(true);
         }, state->next_logger->n_req_entries * signal->owner->time_per_response);
 
@@ -794,7 +800,7 @@ void query_active_loggers(MblMwMetaWearBoard* board) {
 
     state->pending_fns.push([=](void) -> void {
         state->timeout= ThreadPool::schedule([state, board](void) -> void {            
-            board->anon_signals_created(board, nullptr, MBL_MW_STATUS_ERROR_TIMEOUT);
+            board->anon_signals_created(board->anon_signals_context, board, nullptr, MBL_MW_STATUS_ERROR_TIMEOUT);
             state->create_next(true);
         }, board->time_per_response);
 

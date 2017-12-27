@@ -19,7 +19,7 @@ extern "C" {
  * @param signal            Calling object
  * @param data_handler      Callback function to handle data received from the signal
  */
-METAWEAR_API void mbl_mw_anonymous_datasignal_subscribe(MblMwAnonymousDataSignal* signal, MblMwFnData data_handler);
+METAWEAR_API void mbl_mw_anonymous_datasignal_subscribe(MblMwAnonymousDataSignal* signal, void *context, MblMwFnData data_handler);
 /**
  * Generates a string identifying the data chain the anonymous data signal is receiving data from.  
  * The memory allocated by the function must be freed by calling mbl_mw_memory_free.

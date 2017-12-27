@@ -42,7 +42,11 @@ struct Mma8452qConfig {
         uint8_t :2;
         uint8_t hpf_out:1;
         uint8_t :3;
-        uint8_t hp_filter_cutoff;
+        uint8_t sel:2;
+        uint8_t :2;
+        uint8_t pulselpfen:1;
+        uint8_t pulsehpfen:1;
+        uint8_t :2;
         uint8_t active:1;
         uint8_t f_read:1;
         uint8_t lnoise:1;
@@ -111,6 +115,7 @@ const ResponseHeader MMA8452Q_ACCEL_RESPONSE_HEADER(MBL_MW_MODULE_ACCELEROMETER,
 
 struct AccMma8452qState {
     MblMwFnBoardPtrInt read_config_completed;
+    void *read_config_context;
 };
 
 static unordered_map<const MblMwMetaWearBoard*, AccMma8452qState> states;
@@ -120,8 +125,10 @@ static int32_t received_config_response(MblMwMetaWearBoard *board, const uint8_t
     memcpy(config, response + 2, sizeof(*config));
 
     auto callback = states[board].read_config_completed;
+    auto context = states[board].read_config_context;
     states[board].read_config_completed = nullptr;
-    callback(board, MBL_MW_STATUS_OK);
+    states[board].read_config_context = nullptr;
+    callback(context, board, MBL_MW_STATUS_OK);
     
     return MBL_MW_STATUS_OK;
 }
@@ -195,6 +202,14 @@ void mbl_mw_acc_mma8452q_set_range(MblMwMetaWearBoard *board, MblMwAccMma8452qRa
     ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.fs= range;
 }
 
+void mbl_mw_acc_mma8452q_set_high_pass_filter(MblMwMetaWearBoard *board, uint8_t is_enabled) {
+    ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.hpf_out= is_enabled;
+}
+
+void mbl_mw_acc_mma8452q_set_cutoff_freq(MblMwMetaWearBoard *board, MblMwAccMma8452qCutoffFreq cutoff_freq) {
+    ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.sel= cutoff_freq;
+}
+
 void mbl_mw_acc_mma8452q_start(const MblMwMetaWearBoard *board) {
     uint8_t command[3]= {MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::GLOBAL_ENABLE), 1};
     SEND_COMMAND;
@@ -224,7 +239,8 @@ void mbl_mw_acc_mma8452q_write_acceleration_config(const MblMwMetaWearBoard *boa
     SEND_COMMAND;
 }
 
-void read_accelerometer_mma8452q_acceleration_config(const MblMwMetaWearBoard* board, MblMwFnBoardPtrInt completed) {
+void read_accelerometer_mma8452q_acceleration_config(const MblMwMetaWearBoard* board, void *context, MblMwFnBoardPtrInt completed) {
+    states[board].read_config_context = context;
     states[board].read_config_completed = completed;
 
     uint8_t command[2]= {MBL_MW_MODULE_ACCELEROMETER, READ_REGISTER(ORDINAL(AccelerometerMma8452qRegister::DATA_CONFIG))};

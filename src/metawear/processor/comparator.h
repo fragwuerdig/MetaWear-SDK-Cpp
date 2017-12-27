@@ -42,7 +42,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_create(MblMwDataSignal *source, MblMwComparatorOperation op, float reference, 
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a comparator processor specifically for a signed comparison.  A pointer representing the processor will be passed back 
  * to the user via a callback function.
@@ -52,7 +52,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_create(MblMwDataSignal *sou
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_create_signed(MblMwDataSignal *source, MblMwComparatorOperation op, float reference, 
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a comparator processor specifically for an unsigned comparison.  A pointer representing the processor will be passed back 
  * to the user via a callback function.
@@ -62,7 +62,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_create_signed(MblMwDataSign
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_create_unsigned(MblMwDataSignal *source, MblMwComparatorOperation op, float reference, 
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 
 /**
  * Modifies the comparator processor, changing the operation and reference value
@@ -95,7 +95,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_comparator_modify_signal(MblMwDataProc
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_multi_comparator_create(MblMwDataSignal* source, MblMwComparatorOperation op, MblMwComparatorMode mode, 
-        float references[], uint8_t references_length, MblMwFnDataProcessor processor_created);
+        float references[], uint8_t references_length, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a multi-value comparator for signed comparisons.  This feature is only available on firmware v1.2.3 and later.  A pointer representing the 
  * processor will be passed back to the user via a callback function.
@@ -107,7 +107,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_multi_comparator_create(MblMwDataSigna
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_multi_comparator_create_signed(MblMwDataSignal* source, MblMwComparatorOperation op, MblMwComparatorMode mode, 
-        float references[], uint8_t references_length, MblMwFnDataProcessor processor_created);
+        float references[], uint8_t references_length, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a multi-value comparator for unsigned comparisons.  This feature is only available on firmware v1.2.3 and later.  A pointer representing the 
  * processor will be passed back to the user via a callback function.
@@ -119,7 +119,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_multi_comparator_create_signed(MblMwDa
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_multi_comparator_create_unsigned(MblMwDataSignal* source, MblMwComparatorOperation op, MblMwComparatorMode mode, 
-        float references[], uint8_t references_length, MblMwFnDataProcessor processor_created);
+        float references[], uint8_t references_length, void *context, MblMwFnDataProcessor processor_created);
 
 /**
  * Modifies the multi-value comparator, changing the operation and reference values.  This feature is only available on firmware v1.2.3 and later.

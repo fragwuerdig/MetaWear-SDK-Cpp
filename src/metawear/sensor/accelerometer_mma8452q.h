@@ -51,6 +51,16 @@ typedef enum {
 } MblMwAccMma8452qOdr;
 
 /**
+ * Available cutoff frequencies for the MMA8452Q high pass filter
+ */
+typedef enum {
+    MBL_MW_ACC_MMA8452Q_CUTOFF_FREQ_HIGHEST = 0,
+    MBL_MW_ACC_MMA8452Q_CUTOFF_FREQ_HIGH = 1,
+    MBL_MW_ACC_MMA8452Q_CUTOFF_FREQ_MEDIUM = 2,
+    MBL_MW_ACC_MMA8452Q_CUTOFF_FREQ_LOW = 3
+} MblMwAccMma8452qCutoffFreq;
+
+/**
  * Retrieves the data signal representing acceleration data for the MMA8452Q accelerometer
  * @param board     Pointer to the board to retrieve the signal from
  * @return Pointer to the board's MMA8452Q acceleration data signal
@@ -79,6 +89,18 @@ METAWEAR_API void mbl_mw_acc_mma8452q_set_odr(MblMwMetaWearBoard *board, MblMwAc
  * @param range     Acceleration range value to set
  */
 METAWEAR_API void mbl_mw_acc_mma8452q_set_range(MblMwMetaWearBoard *board, MblMwAccMma8452qRange range);
+/**
+ * Turn the high-pass filter on/off
+ * @param board         Pointer to the board to modify
+ * @param is_enabled    0 to disable filter, otherwise filter is on
+ */
+METAWEAR_API void mbl_mw_acc_mma8452q_set_high_pass_filter(MblMwMetaWearBoard *board, uint8_t is_enabled);
+/**
+ * Determine the cutoff frequency of the high pass filter
+ * @param board         Pointer to the board to modify
+ * @param cutoff_freq   Cutoff frequency value to set
+ */
+METAWEAR_API void mbl_mw_acc_mma8452q_set_cutoff_freq(MblMwMetaWearBoard *board, MblMwAccMma8452qCutoffFreq cutoff_freq);
 /**
  * Writes the acceleration settings to the sensor
  * @param board     Pointer to the board to send the command to

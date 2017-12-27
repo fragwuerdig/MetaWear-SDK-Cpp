@@ -19,4 +19,4 @@ typedef struct MblMwDataProcessor MblMwDataProcessor;
  * Definition for callback functions that accept an MblMwDataProcessor pointer
  * @param processor         Processor to be used with the function
  */
-typedef void (*MblMwFnDataProcessor)(MblMwDataProcessor* processor);
+typedef void (*MblMwFnDataProcessor)(void *context, MblMwDataProcessor* processor);

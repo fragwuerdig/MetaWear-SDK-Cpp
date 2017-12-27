@@ -10,7 +10,7 @@ DfuOperations::DfuOperations(const MblMwMetaWearBoard* board, const MblMwDfuDele
 void DfuOperations::cancelDFU() {
     //NSLog(@"cancelDFU");
     dfuRequests->resetSystem();
-    dfuDelegate.on_dfu_cancelled();
+    dfuDelegate.on_dfu_cancelled(dfuDelegate.context);
 }
 
 //-(void)performDFUOnFiles:(NSURL *)softdeviceURL bootloaderURL:(NSURL *)bootloaderURL firmwareType:(MBL_DfuFirmwareTypes)firmwareType
@@ -67,7 +67,7 @@ void DfuOperations::performOldDFUOnFile(const char *firmwareFilename) {
         dfuRequests->writeFileSizeForOldDFU(fileRequests->binFileSize);
     } else {
         const char *errorMessage = "Old DFU only supports Application upload";
-        dfuDelegate.on_error(errorMessage);
+        dfuDelegate.on_error(dfuDelegate.context, errorMessage);
         dfuRequests->resetSystem();
     }
 }
@@ -109,7 +109,7 @@ void DfuOperations::startSendingFile() {
     dfuRequests->enablePacketNotification();
     dfuRequests->receiveFirmwareImage();
     fileRequests->writeNextPacket();
-    dfuDelegate.on_dfu_started();
+    dfuDelegate.on_dfu_started(dfuDelegate.context);
     //    }
     //    if (self.dfuFirmwareType == SOFTDEVICE_AND_BOOTLOADER) {
     //        [dfuDelegate onSoftDeviceUploadStarted];
@@ -186,14 +186,14 @@ void DfuOperations::processStartDFUResponseStatus() {
 //                NSLog(@"Operation not supported");
 //                NSLog(@"Firmware Image failed, Error Status: %@",[self responseErrorMessage:dfuResponse.responseStatus]);
 //                NSString *errorMessage = [NSString stringWithFormat:@"Error on StartDFU\n Message: %@",[self responseErrorMessage:dfuResponse.responseStatus]];
-            dfuDelegate.on_error("Error on StartDFU: OPERATION_NOT_SUPPORTED_RESPONSE");
+            dfuDelegate.on_error(dfuDelegate.context, "Error on StartDFU: OPERATION_NOT_SUPPORTED_RESPONSE");
             dfuRequests->resetSystem();
 //            }
             break;
             
         default:
 //            NSLog(@"StartDFU failed, Error Status: %@",[self responseErrorMessage:dfuResponse.responseStatus]);
-            dfuDelegate.on_error("Error on StartDFU: Unkown Response");
+            dfuDelegate.on_error(dfuDelegate.context, "Error on StartDFU: Unkown Response");
             dfuRequests->resetSystem();
             break;
     }
@@ -211,7 +211,7 @@ void DfuOperations::processInitPacketResponseStatus() {
 //        NSString *errorMessage = [NSString stringWithFormat:@"Error on Init Packet\n Message: %@",[self responseErrorMessage:dfuResponse.responseStatus]];
 //        [dfuDelegate onError:errorMessage];
 //        [dfuRequests resetSystem];
-        dfuDelegate.on_error("Error on Init Packet");
+        dfuDelegate.on_error(dfuDelegate.context, "Error on Init Packet");
         dfuRequests->resetSystem();
     }
 }
@@ -225,7 +225,7 @@ void DfuOperations::processReceiveFirmwareResponseStatus() {
     else {
 //        NSLog(@"Firmware Image failed, Error Status: %@",[self responseErrorMessage:dfuResponse.responseStatus]);
 //        NSString *errorMessage = [NSString stringWithFormat:@"Error on Receive Firmware Image\n Message: %@",[self responseErrorMessage:dfuResponse.responseStatus]];
-        dfuDelegate.on_error("Error on Receive Firmware Image");
+        dfuDelegate.on_error(dfuDelegate.context, "Error on Receive Firmware Image");
         dfuRequests->resetSystem();
     }
 }
@@ -236,12 +236,12 @@ void DfuOperations::processValidateFirmwareResponseStatus() {
 //        NSLog(@"succesfully received notification for ValidateFirmware");
         dfuRequests->activateAndReset();
 //        [self calculateDFUTime];
-        dfuDelegate.on_successful_file_transferred();
+        dfuDelegate.on_successful_file_transferred(dfuDelegate.context);
     }
     else {
 //        NSLog(@"Firmware validate failed, Error Status: %@",[self responseErrorMessage:dfuResponse.responseStatus]);
 //        NSString *errorMessage = [NSString stringWithFormat:@"Error on Validate Firmware Request\n Message: %@",[self responseErrorMessage:dfuResponse.responseStatus]];
-        dfuDelegate.on_error("Error on Validate Firmware Request");
+        dfuDelegate.on_error(dfuDelegate.context, "Error on Validate Firmware Request");
         dfuRequests->resetSystem();
     }
 }
@@ -315,7 +315,7 @@ void DfuOperations::setDFUResponseStruct(const uint8_t *data, uint8_t len) {
 
 void DfuOperations::onTransferPercentage(int32_t percentage) {
 //    //NSLog(@"MBL_DFUOperations: onTransferPercentage %d",percentage);
-    dfuDelegate.on_transfer_percentage(percentage);
+    dfuDelegate.on_transfer_percentage(dfuDelegate.context, percentage);
 }
 void DfuOperations::onAllPacketsTranferred() {
 //    NSLog(@"MBL_DFUOperations: onAllPacketsTransfered");
@@ -336,5 +336,5 @@ void DfuOperations::onFileOpened(size_t) {
 }
 void DfuOperations::onError(const std::string &errorMessage) {
 //    NSLog(@"MBL_DFUOperations: onError");
-    dfuDelegate.on_error(errorMessage.c_str());
+    dfuDelegate.on_error(dfuDelegate.context, errorMessage.c_str());
 }

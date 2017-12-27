@@ -29,7 +29,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_threshold_create(MblMwDataSignal *source, MblMwThresholdMode mode, float boundary,
-        float hysteresis, MblMwFnDataProcessor processor_created);
+        float hysteresis, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Modifies the threshold processor configuration
  * @param threshold             Threshold processor to modify

@@ -31,7 +31,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_pulse_create(MblMwDataSignal *source, MblMwPulseOutput output,
-            float threshold, uint16_t width, MblMwFnDataProcessor processor_created);
+            float threshold, uint16_t width, void *context, MblMwFnDataProcessor processor_created);
 /**
  * Modify the configuration of a pulse detector
  * @param pulse             Pulse detector to modify

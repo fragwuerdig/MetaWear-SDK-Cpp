@@ -28,7 +28,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_time_create(MblMwDataSignal *source, MblMwTimeMode mode, uint32_t period,
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Modify the configuration of the time delay processor
  * @param time_delay            Time delay processor to modify

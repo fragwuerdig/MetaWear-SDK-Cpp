@@ -61,6 +61,12 @@ METAWEAR_API MblMwEvent* mbl_mw_settings_get_disconnect_event(const MblMwMetaWea
  * @return Pointer to the battery state signal
  */
 METAWEAR_API MblMwDataSignal* mbl_mw_settings_get_battery_state_data_signal(const MblMwMetaWearBoard *board);
+/**
+ * Retrieves the data signal representing the device GAP (MAC) address
+ * @param board         Board the battery state is from
+ * @return Pointer to the mac signal
+ */
+METAWEAR_API MblMwDataSignal* mbl_mw_settings_get_mac_data_signal(const MblMwMetaWearBoard *board);
 
 /**
  * Sets the advertisement name

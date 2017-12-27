@@ -24,7 +24,7 @@ METAWEAR_API void mbl_mw_macro_record(MblMwMetaWearBoard *board, uint8_t exec_on
  * @param board                 Calling object
  * @param commands_recorded     Callback function to be executed when the commands are recorded
  */
-METAWEAR_API void mbl_mw_macro_end_record(MblMwMetaWearBoard *board, MblMwFnBoardPtrInt commands_recorded);
+METAWEAR_API void mbl_mw_macro_end_record(MblMwMetaWearBoard *board, void *context, MblMwFnBoardPtrInt commands_recorded);
 /**
  * Execute the commands corresponding to the macro ID
  * @param board     Calling object

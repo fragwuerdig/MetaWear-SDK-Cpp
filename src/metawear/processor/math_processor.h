@@ -37,7 +37,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a math processor using signed operations.  A pointer representing the processor will be passed back 
  * to the user via a callback function.
@@ -47,7 +47,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_math_create(MblMwDataSignal *source, M
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_signed(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Create a math processor using unsigned operations.  A pointer representing the processor will be passed back 
  * to the user via a callback function.
@@ -57,7 +57,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_signed(MblMwDataSignal *so
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_unsigned(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Modify the configuration of a math processor, changing the right side value of the operation
  * @param math                  Math processor to modify

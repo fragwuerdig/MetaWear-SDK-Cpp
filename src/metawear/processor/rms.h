@@ -17,7 +17,7 @@ extern "C" {
  * @param source                Data signal providing the input for the processor
  * @param processor_created     Callback function to be executed when the processor is created
  */
-METAWEAR_API int32_t mbl_mw_dataprocessor_rms_create(MblMwDataSignal *source, MblMwFnDataProcessor processor_created);
+METAWEAR_API int32_t mbl_mw_dataprocessor_rms_create(MblMwDataSignal *source, void *context, MblMwFnDataProcessor processor_created);
 
 #ifdef	__cplusplus
 }

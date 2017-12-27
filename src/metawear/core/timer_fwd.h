@@ -19,4 +19,4 @@ typedef struct MblMwTimer MblMwTimer;
  * Definition for callback functions that accept an MblMwTimer pointer
  * @param timer         Timer to be used with the function
  */
-typedef void (*MblMwFnTimerPtr)(MblMwTimer* timer);
+typedef void (*MblMwFnTimerPtr)(void *context, MblMwTimer* timer);

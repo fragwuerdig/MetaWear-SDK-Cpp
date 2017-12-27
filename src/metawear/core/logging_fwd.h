@@ -18,4 +18,4 @@ typedef struct MblMwDataLogger MblMwDataLogger;
 * Definition for callback functions that accept an MblMwDataLogger pointer
 * @param timer         Timer to be used with the function
 */
-typedef void(*MblMwFnDataLoggerPtr)(MblMwDataLogger* logger);
+typedef void(*MblMwFnDataLoggerPtr)(void *context, MblMwDataLogger* logger);

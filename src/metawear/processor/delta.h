@@ -29,7 +29,7 @@ typedef enum {
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_delta_create(MblMwDataSignal *source, MblMwDeltaMode mode, float magnitude,
-        MblMwFnDataProcessor processor_created);
+        void *context, MblMwFnDataProcessor processor_created);
 /**
  * Sets the reference value of the processor.
  * @param delta                 Delta processor to modify
