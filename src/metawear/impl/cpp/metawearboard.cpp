@@ -176,8 +176,10 @@ int32_t response_handler_packed_data(MblMwMetaWearBoard *board, const uint8_t *r
             MblMwData* data = data_response_converters.at(signal->interpreter)(false, signal, response + i, len - i);
             data->epoch= now;
 
-            signal->handler(signal->context, data);
-
+            if (signal->handler != nullptr) {
+                signal->handler(signal->context, data);
+            }
+            
             free(data->value);
             free(data);
         }
