@@ -103,11 +103,8 @@ class TestGyroY(AnonymousSignalBase):
             self.assertAlmostEqual(a, b, delta = 0.001)
 
     def test_identifier(self):
-        raw = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
-        actual = cast(raw, c_char_p).value.decode("ascii")
-        self.libmetawear.mbl_mw_memory_free(raw)
-
-        self.assertEqual(actual, "angular-velocity[1]")
+        actual = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
+        self.assertEqual(actual.decode('ascii'), "angular-velocity[1]")
 
 class TestSplitImu(AnonymousSignalBase):
     def commandLogger(self, board, writeType, characteristic, command, length):
@@ -181,15 +178,11 @@ class TestActivity(AnonymousSignalBase):
         self.assertEqual(self.result['length'], 2)
 
     def test_check_scheme(self):        
-        raw = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
-        actual = cast(raw, c_char_p).value.decode("ascii")
-        self.libmetawear.mbl_mw_memory_free(raw)
-        self.assertEqual("acceleration:rms?id=0:accumulate?id=1:time?id=2", actual)
+        actual = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
+        self.assertEqual("acceleration:rms?id=0:accumulate?id=1:time?id=2", actual.decode('ascii'))
 
-        raw = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[1])
-        actual = cast(raw, c_char_p).value.decode("ascii")
-        self.libmetawear.mbl_mw_memory_free(raw)
-        self.assertEqual("acceleration:rms?id=0:accumulate?id=1:buffer-state?id=3", actual)
+        actual = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[1])
+        self.assertEqual("acceleration:rms?id=0:accumulate?id=1:buffer-state?id=3", actual.decode('ascii'))
 
     def test_handle_download(self):
         expected= [1.16088868, 1793.6878, 3545.5054]
@@ -242,10 +235,8 @@ class TestQuaternionLimiter(AnonymousSignalBase):
         self.assertEqual(self.result['length'], 1)
 
     def test_check_scheme(self):
-        raw = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
-        actual = cast(raw, c_char_p).value.decode("ascii")
-        self.libmetawear.mbl_mw_memory_free(raw)
-        self.assertEqual("quaternion:time?id=0", actual)
+        actual = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[0])
+        self.assertEqual("quaternion:time?id=0", actual.decode('ascii'))
 
 class TestMultipleLoggers(AnonymousSignalBase):
     def commandLogger(self, board, writeType, characteristic, command, length):
@@ -314,10 +305,8 @@ class TestTemperature(AnonymousSignalBase):
     def test_identifier(self):
         for x in range(0, 4):
             with self.subTest(source=str(x)):
-                raw = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[x])
-                actual = cast(raw, c_char_p).value.decode("ascii")
-                self.libmetawear.mbl_mw_memory_free(raw)
-                self.assertEqual("temperature[" + str(x) + "]", actual)
+                actual = self.libmetawear.mbl_mw_anonymous_datasignal_get_identifier(self.result['signals'].contents[x])
+                self.assertEqual("temperature[" + str(x) + "]", actual.decode('ascii'))
 
 class TestTimeout(AnonymousSignalBase):
     def setUp(self):

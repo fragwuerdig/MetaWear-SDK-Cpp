@@ -7,5 +7,5 @@ struct MblMwAnonymousDataSignal {
     virtual ~MblMwAnonymousDataSignal() = 0;
 
     virtual void subscribe(void *context, MblMwFnData data_handler) = 0;
-    virtual char* get_identifier() const = 0;
+    virtual const char* get_identifier() const = 0;
 };

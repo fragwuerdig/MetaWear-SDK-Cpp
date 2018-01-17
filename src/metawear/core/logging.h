@@ -106,7 +106,7 @@ METAWEAR_API void mbl_mw_logger_subscribe(MblMwDataLogger* logger, void *context
  * The memory allocated by the function must be freed by calling mbl_mw_memory_free.
  * @param logger                Calling object
  */
-METAWEAR_API char* mbl_mw_logger_generate_identifier(const MblMwDataLogger* logger);
+METAWEAR_API const char* mbl_mw_logger_generate_identifier(const MblMwDataLogger* logger);
 
 #ifdef	__cplusplus
 }

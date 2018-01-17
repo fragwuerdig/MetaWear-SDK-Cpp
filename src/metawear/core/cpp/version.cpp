@@ -2,10 +2,12 @@
 
 #include <cstdlib>
 #include <string>
+#include <sstream>
 #include <vector>
 
 using std::atoi;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 const uint8_t EMPTY_VALUE= 0;
@@ -22,14 +24,21 @@ Version::Version(uint8_t major, uint8_t minor, uint8_t step) {
     this->major= major;
     this->minor= minor;
     this->step= step;
-}
 
+    stringstream buffer;
+    buffer << major << SEPARATOR << minor << SEPARATOR << step;
+    sem_ver = buffer.str();
+}
 
 void Version::deserialize(uint8_t** state_stream) {
     step = **state_stream;
     minor = *(++(*state_stream));
     major = *(++(*state_stream));
     ++(*state_stream);
+
+    stringstream buffer;
+    buffer << major << SEPARATOR << minor << SEPARATOR << step;
+    sem_ver = buffer.str();
 }
 
 void Version::serialize(vector<uint8_t>& state) const {
@@ -43,6 +52,7 @@ bool Version::empty() const {
 }
 
 void Version::assign(const std::string& new_version) {
+    sem_ver.assign(new_version);
     string tempStr;
     vector<string> parts;
     size_t i= 0;
@@ -70,6 +80,7 @@ Version& Version::operator =(const Version& original) {
         major= original.major;
         minor= original.minor;
         step= original.step;
+        sem_ver = original.sem_ver;
     }
     return *this;
 }

@@ -257,6 +257,14 @@ static MblMwData* convert_to_mac_address(bool log_data, const MblMwDataSignal* s
     return msg;
 }
 
+static MblMwData* convert_to_sensor_orientation_mma8452q(bool log_data, const MblMwDataSignal* signal, const uint8_t *response, uint8_t len) {    
+    MblMwSensorOrientation *value= (MblMwSensorOrientation*) malloc(sizeof(MblMwSensorOrientation));
+    uint32_t offset = (response[0] & 0x06) >> 1;
+    *value = (MblMwSensorOrientation) (4 * (response[0] & 0x01) + ((offset == 2 || offset == 3) ? offset ^ 0x1 : offset));
+
+    CREATE_MESSAGE(MBL_MW_DT_ID_SENSOR_ORIENTATION);
+}
+
 unordered_map<DataInterpreter, FnBoolDataSignalByteArray> data_response_converters = {
     { DataInterpreter::INT32 , convert_to_int32 },
     { DataInterpreter::UINT32 , convert_to_uint32 },
@@ -287,7 +295,8 @@ unordered_map<DataInterpreter, FnBoolDataSignalByteArray> data_response_converte
     { DataInterpreter::SENSOR_FUSION_CORRECTED_ACC , convert_to_corrected_acc },
     { DataInterpreter::DEBUG_OVERFLOW_STATE , convert_to_overflow_state },
     { DataInterpreter::SENSOR_ORIENTATION, convert_to_sensor_orientation },
-    { DataInterpreter::MAC_ADDRESS, convert_to_mac_address }
+    { DataInterpreter::MAC_ADDRESS, convert_to_mac_address },
+    { DataInterpreter::SENSOR_ORIENTATION_MMA8452Q, convert_to_sensor_orientation_mma8452q }
 };
 
 static float bosch_acc_to_firmware(const MblMwDataSignal* signal, float value) {

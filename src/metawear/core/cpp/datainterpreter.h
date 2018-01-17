@@ -35,7 +35,8 @@ enum class DataInterpreter : uint8_t {
     SENSOR_FUSION_CORRECTED_ACC,
     DEBUG_OVERFLOW_STATE,
     SENSOR_ORIENTATION,
-    MAC_ADDRESS
+    MAC_ADDRESS,
+    SENSOR_ORIENTATION_MMA8452Q
 };
 
 enum class FirmwareConverter : uint8_t {

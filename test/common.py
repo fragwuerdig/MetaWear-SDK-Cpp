@@ -303,6 +303,18 @@ class TestMetaWearBase(unittest.TestCase):
         elif (characteristic.contents.uuid_high == 0x00002a2600001000 and characteristic.contents.uuid_low == 0x800000805f9b34fb):
             bytes = cast(self.firmware_revision.raw, POINTER(c_ubyte))
             handler(self.board, bytes, len(self.firmware_revision.raw))
+        elif (characteristic.contents.uuid_high == 0x00002a2700001000 and characteristic.contents.uuid_low == 0x800000805f9b34fb):
+            hw = create_string_buffer(b'0.1', 3)
+            bytes = cast(hw.raw, POINTER(c_ubyte))
+            handler(self.board, bytes, len(hw.raw))
+        elif (characteristic.contents.uuid_high == 0x00002a2900001000 and characteristic.contents.uuid_low == 0x800000805f9b34fb):
+            mft = create_string_buffer(b'deadbeef', 8)
+            bytes = cast(mft.raw, POINTER(c_ubyte))
+            handler(self.board, bytes, len(mft.raw))
+        elif (characteristic.contents.uuid_high == 0x00002a2500001000 and characteristic.contents.uuid_low == 0x800000805f9b34fb):
+            serial = create_string_buffer(b'cafebabe', 8)
+            bytes = cast(serial.raw, POINTER(c_ubyte))
+            handler(self.board, bytes, len(serial.raw))
 
     def commandLogger(self, board, writeType, characteristic, command, length):
         self.command= []

@@ -38,49 +38,81 @@ const double TICK_TIME_STEP= (48.0 / 32768.0) * 1000.0;         ///< millisecond
 
 static int32_t logging_response_readout_progress(MblMwMetaWearBoard *board, const uint8_t *response, uint8_t len);
 
+struct TimeReference {
+    time_point<system_clock> timestamp;
+    uint32_t tick;
+    uint8_t reset_uid;
+
+    TimeReference(uint8_t** state_stream);
+    TimeReference(uint32_t tick, uint8_t reset_uid);
+    void serialize(vector<uint8_t>& state) const;
+};
+
+struct MblMwDataLogger;
+struct LoggerState : public AsyncCreator {
+    unordered_map<uint8_t, TimeReference> log_time_references;
+    unordered_map<uint8_t, uint32_t> latest_tick, rollback_timestamps;
+    unordered_map<uint8_t, MblMwDataLogger*> data_loggers;
+    unordered_map<const MblMwDataLogger*, string> identifiers;
+    unordered_map<ResponseHeader, uint8_t> placeholder;
+    unordered_map<const MblMwDataSignal*, int8_t> nRemainingLoggers;
+    vector<MblMwAnonymousDataSignal*> anonymous_signals;
+    MblMwDataLogger* next_logger;
+    MblMwLogDownloadHandler log_download_handler;
+    float log_download_notify_progress;
+    uint32_t n_log_entries;
+    uint8_t latest_reset_uid, queryLogId;
+    bool state_signal;
+
+    LoggerState();
+
+    void clear_data_loggers();
+};
+
 struct MblMwDataLogger : public MblMwAnonymousDataSignal {
     MblMwDataLogger(uint8_t** state_stream, bool deserialize_component, MblMwMetaWearBoard* board);
     MblMwDataLogger(MblMwDataSignal* source, void *context, MblMwFnDataLoggerPtr logger_ready);
 
     virtual void subscribe(void *context, MblMwFnData data_handler);
-    virtual char* get_identifier() const {
-        stringstream stream;
-        MblMwDataSignal* current = source;
-        MblMwDataProcessor* processor;
-        stack<MblMwDataSignal*> parts;
+    virtual const char* get_identifier() const {
+        auto state = GET_LOGGER_STATE(source->owner);
 
-        do {
-            parts.push(current);
-            if ((processor = dynamic_cast<MblMwDataProcessor*>(current)) != nullptr) {
-                current = processor->parent();
-            } else if (current->header.module_id == MBL_MW_MODULE_DATA_PROCESSOR && CLEAR_READ(current->header.register_id) == ORDINAL(DataProcessorRegister::STATE)) {
-                ResponseHeader header(MBL_MW_MODULE_DATA_PROCESSOR, ORDINAL(DataProcessorRegister::NOTIFY), current->header.data_id);
-                current = dynamic_cast<MblMwDataProcessor*>(current->owner->module_events.at(header))->parent();
-            } else {
-                current = nullptr;
+        if (!state->identifiers.count(this)) {
+            stringstream stream;
+            MblMwDataSignal* current = source;
+            MblMwDataProcessor* processor;
+            stack<MblMwDataSignal*> parts;
+
+            do {
+                parts.push(current);
+                if ((processor = dynamic_cast<MblMwDataProcessor*>(current)) != nullptr) {
+                    current = processor->parent();
+                } else if (current->header.module_id == MBL_MW_MODULE_DATA_PROCESSOR && CLEAR_READ(current->header.register_id) == ORDINAL(DataProcessorRegister::STATE)) {
+                    ResponseHeader header(MBL_MW_MODULE_DATA_PROCESSOR, ORDINAL(DataProcessorRegister::NOTIFY), current->header.data_id);
+                    current = dynamic_cast<MblMwDataProcessor*>(current->owner->module_events.at(header))->parent();
+                } else {
+                    current = nullptr;
+                }
+            } while(current != nullptr);
+
+            bool first = true;
+            if ((processor = dynamic_cast<MblMwDataProcessor*>(parts.top())) != nullptr) {
+                processor->input->create_uri(stream);
+                first = false;
             }
-        } while(current != nullptr);
+            while(!parts.empty()) {
+                if (!first) {
+                    stream << ":";
+                }
+                parts.top()->create_uri(stream);
 
-        bool first = true;
-        if ((processor = dynamic_cast<MblMwDataProcessor*>(parts.top())) != nullptr) {
-            processor->input->create_uri(stream);
-            first = false;
-        }
-        while(!parts.empty()) {
-            if (!first) {
-                stream << ":";
+                first = false;
+                parts.pop();
             }
-            parts.top()->create_uri(stream);
 
-            first = false;
-            parts.pop();
+            state->identifiers.emplace(this, stream.str());
         }
-
-        string uri = stream.str();
-        char* buffer = (char*) malloc(uri.size() + 1);
-        strcpy(buffer, uri.data());
-
-        return buffer;
+        return state->identifiers[this].c_str();
     }
 
     void add_entry_id(uint8_t id, bool anonymous);
@@ -99,35 +131,6 @@ struct MblMwDataLogger : public MblMwAnonymousDataSignal {
     MblMwFnDataLoggerPtr logger_ready;
     vector<uint8_t> entry_ids;
     unordered_map<uint8_t, queue<uint32_t>> entries;
-};
-
-struct TimeReference {
-    time_point<system_clock> timestamp;
-    uint32_t tick;
-    uint8_t reset_uid;
-
-    TimeReference(uint8_t** state_stream);
-    TimeReference(uint32_t tick, uint8_t reset_uid);
-    void serialize(vector<uint8_t>& state) const;
-};
-
-struct LoggerState : public AsyncCreator {
-    unordered_map<uint8_t, TimeReference> log_time_references;
-    unordered_map<uint8_t, uint32_t> latest_tick, rollback_timestamps;
-    unordered_map<uint8_t, MblMwDataLogger*> data_loggers;
-    unordered_map<ResponseHeader, uint8_t> placeholder;
-    unordered_map<const MblMwDataSignal*, int8_t> nRemainingLoggers;
-    vector<MblMwAnonymousDataSignal*> anonymous_signals;
-    MblMwDataLogger* next_logger;
-    MblMwLogDownloadHandler log_download_handler;
-    float log_download_notify_progress;
-    uint32_t n_log_entries;
-    uint8_t latest_reset_uid, queryLogId;
-    bool state_signal;
-
-    LoggerState();
-
-    void clear_data_loggers();
 };
 
 static int32_t logging_response_time_received(MblMwMetaWearBoard *board, const uint8_t *response, uint8_t len) {
@@ -568,6 +571,7 @@ void LoggerState::clear_data_loggers() {
     }
 
     data_loggers.clear();
+    identifiers.clear();
 }
 
 void init_logging(MblMwMetaWearBoard *board) {
@@ -696,7 +700,7 @@ void mbl_mw_logger_subscribe(MblMwDataLogger* loggable, void *context, MblMwFnDa
     loggable->data_handler = received_data;
 }
 
-char* mbl_mw_logger_generate_identifier(const MblMwDataLogger* signal) {
+const char* mbl_mw_logger_generate_identifier(const MblMwDataLogger* signal) {
     return signal->get_identifier();
 }
 

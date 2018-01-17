@@ -23,6 +23,19 @@ extern "C" {
 #endif
 
 /**
+ * Wrapper class holding Characteristics under the
+ * <a href="https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.device_information.xml">Device Information</a>
+ * GATT service
+ */
+typedef struct {
+    const char* manufacturer;           ///< Device's manufacturer name, characteristic 0x2A29
+    const char* model_number;           ///< Model number assigned by MbientLab, characteristic 0x2A24
+    const char* serial_number;          ///< Device's serial number, characteristic 0x2A25
+    const char* firmware_revision;      ///< Revision of the firmware on the device, characteristic 0x2A26
+    const char* hardware_revision;      ///< Revision of the hardware on the device, characteristic 0x2A27
+} MblMwDeviceInformation;
+
+/**
  * @deprecated As of v0.5.0 and will be removed in v1.0.0.  Use mbl_mw_metawearboard_notify_char_changed instead.
  */
 METAWEAR_API int32_t mbl_mw_connection_notify_char_changed(MblMwMetaWearBoard *board, const uint8_t *value, uint8_t len);
@@ -95,6 +108,12 @@ METAWEAR_API MblMwModel mbl_mw_metawearboard_get_model(const MblMwMetaWearBoard*
  * @return Friendly name representing the board model 
  */
 METAWEAR_API const char* mbl_mw_metawearboard_get_model_name(const MblMwMetaWearBoard* board);
+/**
+ * Retrieves supported characteristics from the Device Information service.  
+ * The memory allocated by the function must be freed by calling mbl_mw_memory_free.
+ * @return Struct holding the characteristics
+ */
+METAWEAR_API const MblMwDeviceInformation* mbl_mw_metawearboard_get_device_information(const MblMwMetaWearBoard* board);
 
 /**
  * Serializes the API state.  The memory allocated by the function must be freed by calling mbl_mw_memory_free.

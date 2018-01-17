@@ -243,11 +243,8 @@ class TestLogIdentifiers(TestMetaWearBase):
         self.libmetawear.mbl_mw_datasignal_log(roy_y_signal, self.logger_created)
         self.events["log"].wait()
 
-        raw = self.libmetawear.mbl_mw_logger_generate_identifier(self.loggers[0])
-        actual = cast(raw, c_char_p).value.decode("ascii")
-        self.libmetawear.mbl_mw_memory_free(raw)
-
-        self.assertEqual(actual, "angular-velocity[2]")
+        actual = self.libmetawear.mbl_mw_logger_generate_identifier(self.loggers[0])
+        self.assertEqual(actual.decode('ascii'), "angular-velocity[2]")
 
 class TestSensorFusionLogging(TestMetaWearBase):
     def setUp(self):

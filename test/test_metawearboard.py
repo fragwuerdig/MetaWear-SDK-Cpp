@@ -51,6 +51,12 @@ class TestMetaWearBoard(TestMetaWearBase):
     def test_service_discovery(self):
         self.assertEqual(self.init_status, Const.STATUS_OK)
 
+    def test_device_information(self):
+        expected = DeviceInformation(manufacturer = b"deadbeef", model_number = b"0", serial_number = b"cafebabe", firmware_revision = b"1.1.3", hardware_revision = b"0.1")
+        actual = self.libmetawear.mbl_mw_metawearboard_get_device_information(self.board)
+
+        self.assertEqual(actual.contents, expected)
+
 class TestMetaWearBoardInitialize(TestMetaWearBase):
     def test_reinitialize(self):
         expected_cmds= [
@@ -722,8 +728,8 @@ class TestModel(TestMetaWearBase):
                 self.board= self.libmetawear.mbl_mw_metawearboard_create(byref(self.btle_connection))
                 self.libmetawear.mbl_mw_metawearboard_initialize(self.board, self.initialized_fn)
 
-                raw = self.libmetawear.mbl_mw_metawearboard_get_model_name(self.board)
-                self.assertEqual(m[3], cast(raw, c_char_p).value.decode("ascii"))
+                actual = self.libmetawear.mbl_mw_metawearboard_get_model_name(self.board)
+                self.assertEqual(m[3], actual.decode('ascii'))
 
 class TestIndefiniteTimeout(TestMetaWearBase):
     def setUp(self):

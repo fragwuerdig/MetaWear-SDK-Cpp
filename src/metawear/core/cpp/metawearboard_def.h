@@ -41,7 +41,7 @@ struct MblMwMetaWearBoard {
     std::shared_ptr<Task> initialized_timeout;
     MblMwBtleConnection btle_conn;
     Version firmware_revision;
-    std::string module_number;
+    std::string module_number, hardware_revision, serial_number, manufacturer;
     std::unique_ptr<DfuOperations> operations;
     const char* filename;
 

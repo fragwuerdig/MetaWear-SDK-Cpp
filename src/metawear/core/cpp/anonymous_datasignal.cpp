@@ -7,6 +7,6 @@ void mbl_mw_anonymous_datasignal_subscribe(MblMwAnonymousDataSignal* signal, voi
     signal->subscribe(context, data_handler);
 }
 
-char* mbl_mw_anonymous_datasignal_get_identifier(const MblMwAnonymousDataSignal* signal) {
+const char* mbl_mw_anonymous_datasignal_get_identifier(const MblMwAnonymousDataSignal* signal) {
     return signal->get_identifier();
 }

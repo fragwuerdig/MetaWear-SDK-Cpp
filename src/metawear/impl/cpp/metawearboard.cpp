@@ -179,7 +179,7 @@ int32_t response_handler_packed_data(MblMwMetaWearBoard *board, const uint8_t *r
             if (signal->handler != nullptr) {
                 signal->handler(signal->context, data);
             }
-            
+
             free(data->value);
             free(data);
         }
@@ -246,11 +246,17 @@ const uint64_t DEVICE_INFO_SERVICE_UUID_HIGH = 0x0000180a00001000,
 const MblMwGattChar METAWEAR_COMMAND_CHAR = { METAWEAR_SERVICE_NOTIFY_CHAR.service_uuid_high, METAWEAR_SERVICE_NOTIFY_CHAR.service_uuid_low, 
         0x326a900185cb9195, 0xd9dd464cfbbae75a };
 const MblMwGattChar DEV_INFO_FIRMWARE_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2600001000, 0x800000805f9b34fb },
-        DEV_INFO_MODEL_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2400001000, 0x800000805f9b34fb };
+        DEV_INFO_MODEL_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2400001000, 0x800000805f9b34fb },
+        DEV_INFO_HW_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2700001000, 0x800000805f9b34fb },
+        DEV_INFO_MFT_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2900001000, 0x800000805f9b34fb },
+        DEV_INFO_SERIAL_CHAR = { DEVICE_INFO_SERVICE_UUID_HIGH, DEVICE_INFO_SERVICE_UUID_LOW, 0x00002a2500001000, 0x800000805f9b34fb };
 
 const vector<MblMwGattChar> BOARD_DEV_INFO_CHARS = {
     DEV_INFO_FIRMWARE_CHAR,
-    DEV_INFO_MODEL_CHAR
+    DEV_INFO_MODEL_CHAR,
+    DEV_INFO_HW_CHAR,
+    DEV_INFO_MFT_CHAR,
+    DEV_INFO_SERIAL_CHAR
 };
 
 const uint8_t INIT_SERIALIZATION_FORMAT = 0, SIGNAL_COMPONENT_SERIALIZATION_FORMAT = 1;
@@ -340,10 +346,38 @@ static inline void queue_next_query(MblMwMetaWearBoard *board) {
     }
 }
 
-static int32_t model_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
-    MblMwMetaWearBoard* board = (MblMwMetaWearBoard*) caller;
-    ((MblMwMetaWearBoard*) caller)->module_number.assign(value, value + length);
+static int32_t serial_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
+    auto board = (MblMwMetaWearBoard*) caller;
+    board->serial_number.assign(value, value + length);
+    
     queue_next_query(board);
+
+    return MBL_MW_STATUS_OK;
+}
+
+static int32_t mft_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
+    auto board = (MblMwMetaWearBoard*) caller;
+    board->manufacturer.assign(value, value + length);
+
+    board->btle_conn.read_gatt_char(context, board, &DEV_INFO_SERIAL_CHAR, serial_char_handler);
+
+    return MBL_MW_STATUS_OK;
+}
+
+static int32_t hw_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
+    auto board = (MblMwMetaWearBoard*) caller;
+    board->hardware_revision.assign(value, value + length);
+
+    board->btle_conn.read_gatt_char(context, board, &DEV_INFO_MFT_CHAR, mft_char_handler);
+
+    return MBL_MW_STATUS_OK;
+}
+
+static int32_t model_char_handler(void *context, const void* caller, const uint8_t* value, uint8_t length) {
+    auto board = (MblMwMetaWearBoard*) caller;
+    board->module_number.assign(value, value + length);
+
+    board->btle_conn.read_gatt_char(context, board, &DEV_INFO_HW_CHAR, hw_char_handler);
 
     return MBL_MW_STATUS_OK;
 }
@@ -383,7 +417,12 @@ static int32_t firware_char_handler(void *context, const void* caller, const uin
         board->module_info.clear();
         board->module_discovery_index = -1;
     }
-    board->btle_conn.read_gatt_char(board->btle_conn.context, board, &DEV_INFO_MODEL_CHAR, model_char_handler);
+
+    if (board->module_number.empty()) {
+        board->btle_conn.read_gatt_char(context, board, &DEV_INFO_MODEL_CHAR, model_char_handler);
+    } else {
+        board->btle_conn.read_gatt_char(context, board, &DEV_INFO_HW_CHAR, hw_char_handler);
+    }
 
     return MBL_MW_STATUS_OK;
 }
@@ -581,6 +620,16 @@ const char * MODEL_NAMES[] = {
 };
 const char* mbl_mw_metawearboard_get_model_name(const MblMwMetaWearBoard* board) {
     return MODEL_NAMES[mbl_mw_metawearboard_get_model(board) + 1];
+}
+
+const MblMwDeviceInformation* mbl_mw_metawearboard_get_device_information(const MblMwMetaWearBoard* board) {
+    MblMwDeviceInformation* dev_info = (MblMwDeviceInformation*) malloc(sizeof(MblMwDeviceInformation));
+    dev_info->manufacturer = board->manufacturer.c_str();
+    dev_info->model_number = board->module_number.c_str();
+    dev_info->serial_number = board->serial_number.c_str();
+    dev_info->firmware_revision = board->firmware_revision.sem_ver.c_str();
+    dev_info->hardware_revision = board->hardware_revision.c_str();
+    return dev_info;
 }
 
 uint8_t* mbl_mw_metawearboard_serialize(const MblMwMetaWearBoard* board, uint32_t* size) {

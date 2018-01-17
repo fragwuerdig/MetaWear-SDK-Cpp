@@ -36,6 +36,56 @@ const uint8_t MMA8452Q_DEFAULT_CONFIG[]= {
     0x00, 0x00, 0x00, 0x00
 }, PACKED_ACC_REVISION= 1;
 
+const float ORIENTATION_STEPS[4][8] = {
+    {1.25f, 2.5f, 5, 10, 20, 20, 20, 20},
+    {1.25f, 2.5f, 5, 10, 20, 80, 80, 80},
+    {1.25f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f},
+    {1.25f, 2.5f, 5, 10, 20, 80, 160, 160}
+};
+
+const float OS_CUTOFF_FREQS[4][8][4] = {
+    {
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 8.f, 4.f, 2.f, 1.f },
+        { 4.f, 2.f, 1.f, 0.5f },
+        { 2.f, 1.f, 0.5f, 0.25f },
+        { 2.f, 1.f, 0.5f, 0.25f },
+        { 2.f, 1.f, 0.5f, 0.25f },
+        { 2.f, 1.f, 0.5f, 0.25f }
+    },
+    {
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 8.f, 4.f, 2.f, 1.f },
+        { 4.f, 2.f, 1.f, 0.5f },
+        { 2.f, 1.f, 0.5f, 0.25f },
+        { 0.5f, 0.25f, 0.125f, 0.063f },
+        { 0.5f, 0.25f, 0.125f, 0.063f },
+        { 0.5f, 0.25f, 0.125f, 0.063f }
+    },
+    {
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f },
+        { 16.f, 8.f, 4.f, 2.f }
+    },
+    {
+        { 16.f, 8.f, 4.f, 2.f },
+        { 8.f, 4.f, 2.f, 1.f },
+        { 4.f, 2.f, 1.f, 0.5f },
+        { 2.f, 1.f, 0.5f, 0.25f },
+        { 1.f, 0.5f, 0.25f, 0.125f },
+        { 0.25f, 0.125f, 0.063f, 0.031f },
+        { 0.25f, 0.125f, 0.063f, 0.031f },
+        { 0.25f, 0.125f, 0.063f, 0.031f }
+    }
+};
+
 struct Mma8452qConfig {
     struct {
         uint8_t fs:2;
@@ -44,8 +94,8 @@ struct Mma8452qConfig {
         uint8_t :3;
         uint8_t sel:2;
         uint8_t :2;
-        uint8_t pulselpfen:1;
-        uint8_t pulsehpfen:1;
+        uint8_t pulse_lpf_en:1;
+        uint8_t pulse_hpf_en:1;
         uint8_t :2;
         uint8_t active:1;
         uint8_t f_read:1;
@@ -111,11 +161,13 @@ struct Mma8452qConfig {
 };
 
 const ResponseHeader MMA8452Q_ACCEL_RESPONSE_HEADER(MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::DATA_VALUE)),
-    MMA8452Q_PACKED_ACCEL_RESPONSE_HEADER(MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::PACKED_ACC_DATA));
+    MMA8452Q_PACKED_ACCEL_RESPONSE_HEADER(MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::PACKED_ACC_DATA)),
+    MMA8452Q_ORIENTATION_RESPONSE_HEADER(MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_VALUE));
 
 struct AccMma8452qState {
     MblMwFnBoardPtrInt read_config_completed;
     void *read_config_context;
+    uint16_t orient_delay;
 };
 
 static unordered_map<const MblMwMetaWearBoard*, AccMma8452qState> states;
@@ -164,8 +216,17 @@ void init_accelerometer_mma8452q(MblMwMetaWearBoard *board) {
         board->responses[MMA8452Q_PACKED_ACCEL_RESPONSE_HEADER]= response_handler_packed_data;
     }
 
+    if (!board->module_events.count(MMA8452Q_ORIENTATION_RESPONSE_HEADER)) {
+        board->module_events[MMA8452Q_ORIENTATION_RESPONSE_HEADER]= new MblMwDataSignal(MMA8452Q_ORIENTATION_RESPONSE_HEADER, board, 
+                DataInterpreter::SENSOR_ORIENTATION_MMA8452Q, FirmwareConverter::DEFAULT, 1, 1, 0, 0);
+    }
+    board->responses[MMA8452Q_ORIENTATION_RESPONSE_HEADER]= response_handler_data_no_id;
+
     board->responses.emplace(piecewise_construct, forward_as_tuple(MBL_MW_MODULE_ACCELEROMETER, READ_REGISTER(ORDINAL(AccelerometerMma8452qRegister::DATA_CONFIG))),
         forward_as_tuple(received_config_response));
+
+    AccMma8452qState newState = {nullptr, nullptr, 100};
+    states.insert({board, newState});
 }
 
 void serialize_accelerometer_mma8452q_config(const MblMwMetaWearBoard* board, std::vector<uint8_t>& state) {
@@ -202,12 +263,15 @@ void mbl_mw_acc_mma8452q_set_range(MblMwMetaWearBoard *board, MblMwAccMma8452qRa
     ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.fs= range;
 }
 
-void mbl_mw_acc_mma8452q_set_high_pass_filter(MblMwMetaWearBoard *board, uint8_t is_enabled) {
-    ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.hpf_out= is_enabled;
-}
-
-void mbl_mw_acc_mma8452q_set_cutoff_freq(MblMwMetaWearBoard *board, MblMwAccMma8452qCutoffFreq cutoff_freq) {
-    ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER))->acc.sel= cutoff_freq;
+void mbl_mw_acc_mma8452q_set_high_pass_cutoff(MblMwMetaWearBoard *board, float frequency) {
+    auto config = ((Mma8452qConfig*)board->module_config.at(MBL_MW_MODULE_ACCELEROMETER));
+    if (frequency != 0) {
+        // 'size' parameter is the 3rd index of OS_CUTOFF_FREQS definition
+        config->acc.sel = closest_index(OS_CUTOFF_FREQS[config->acc.mods][config->acc.dr], 4, frequency);
+        config->acc.hpf_out = 1;
+    } else {
+        config->acc.hpf_out = 0;
+    }
 }
 
 void mbl_mw_acc_mma8452q_start(const MblMwMetaWearBoard *board) {
@@ -254,5 +318,46 @@ void create_acc_mma8452q_uri(const MblMwDataSignal* signal, stringstream& uri) {
         if (signal->length() <= 2) {
             uri << "[" << (int) (signal->offset >> 1) << "]";
         }
+        break;
+    case ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_VALUE):
+        uri << "orientation";
+        break;
     }
+}
+
+MblMwDataSignal* mbl_mw_acc_mma8452q_get_orientation_detection_data_signal(const MblMwMetaWearBoard* board) {
+    if (board->module_info.at(MBL_MW_MODULE_ACCELEROMETER).implementation != MBL_MW_MODULE_ACC_TYPE_MMA8452Q) {
+        return nullptr;
+    }
+    GET_DATA_SIGNAL(MMA8452Q_ORIENTATION_RESPONSE_HEADER);
+}
+
+void mbl_mw_acc_mma8452q_set_orientation_delay(MblMwMetaWearBoard *board, uint16_t delay) {
+    states[board].orient_delay = delay;
+}
+
+void mbl_mw_acc_mma8452q_enable_orientation_detection(const MblMwMetaWearBoard *board) {
+    auto config = (Mma8452qConfig*) board->module_config.at(MBL_MW_MODULE_ACCELEROMETER);
+    config->orientation.pl_count = static_cast<uint8_t>(states[board].orient_delay / ORIENTATION_STEPS[config->acc.mods][config->acc.dr]);
+    config->orientation.pl_en = 1;
+    
+    uint8_t config_cmd[7] = { MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_CONFIG) };
+    memcpy(config_cmd + 2, &config->orientation, sizeof(config->orientation));
+    send_command(board, config_cmd, sizeof(config_cmd));
+
+    uint8_t command[3]= {MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_ENABLE), 1};
+    SEND_COMMAND;
+}
+
+void mbl_mw_acc_mma8452q_disable_orientation_detection(const MblMwMetaWearBoard *board) {
+    uint8_t command[3]= {MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_ENABLE), 0};
+    SEND_COMMAND;
+
+    auto config = (Mma8452qConfig*) board->module_config.at(MBL_MW_MODULE_ACCELEROMETER);
+    config->orientation.pl_count = 0;
+    config->orientation.pl_en = 0;
+
+    uint8_t config_cmd[7] = { MBL_MW_MODULE_ACCELEROMETER, ORDINAL(AccelerometerMma8452qRegister::ORIENTATION_CONFIG) };
+    memcpy(config_cmd + 2, &config->orientation, sizeof(config->orientation));
+    send_command(board, config_cmd, sizeof(config_cmd));
 }
