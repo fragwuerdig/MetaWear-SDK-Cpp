@@ -35,13 +35,13 @@ typedef struct {
  * @param start         Pointer to the beginning of the byte array
  * @param length        Length of the byte array
  */
-typedef int32_t(*MblMwFnIntVoidPtrArray)(void *context, const void* caller, const uint8_t* start, uint8_t length);
+typedef int32_t(*MblMwFnIntVoidPtrArray)(const void* caller, const uint8_t* start, uint8_t length);
 /**
  * Definition for callback functions that accept a void pointer and an int32
  * @param caller        Object the callback is designated for
  * @param value         Additional value passed to the function for context specific callbacks
  */
-typedef void(*MblMwFnVoidVoidPtrInt)(void *context, const void* caller, int32_t value);
+typedef void(*MblMwFnVoidVoidPtrInt)(const void* caller, int32_t value);
 
 /**
  * Wrapper class containing functions for communicating with the MetaWear through a Bluetooth Low Energy connection.
