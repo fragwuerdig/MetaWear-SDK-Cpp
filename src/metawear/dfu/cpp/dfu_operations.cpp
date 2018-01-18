@@ -52,7 +52,7 @@ void DfuOperations::perfromDFUOnZipFile(const char *zipFilename) {
     fileRequests->openZip(zipFilename);
     //[dfuRequests enableNotification];
     dfuRequests->startDFU(APPLICATION);
-    dfuRequests->writeFileSize(fileRequests->binFileSize);
+    dfuRequests->writeFileSize(static_cast<uint32_t>(fileRequests->binFileSize));
 }
 
 void DfuOperations::performOldDFUOnFile(const char *firmwareFilename) {
@@ -64,7 +64,7 @@ void DfuOperations::performOldDFUOnFile(const char *firmwareFilename) {
         fileRequests->openFile(firmwareFilename);
 //        [dfuRequests enableNotification];
         dfuRequests->startOldDFU();
-        dfuRequests->writeFileSizeForOldDFU(fileRequests->binFileSize);
+        dfuRequests->writeFileSizeForOldDFU(static_cast<uint32_t>(fileRequests->binFileSize));
     } else {
         const char *errorMessage = "Old DFU only supports Application upload";
         dfuDelegate.on_error(dfuDelegate.context, errorMessage);
@@ -172,7 +172,7 @@ void DfuOperations::processStartDFUResponseStatus() {
         case OPERATION_SUCCESSFUL_RESPONSE:
 //            NSLog(@"successfully received startDFU notification");
             if (isVersionCharacteristicExist) {
-                dfuRequests->sendInitPacket(fileRequests->metaDataFile, fileRequests->metaDataFileSize);
+                dfuRequests->sendInitPacket(fileRequests->metaDataFile, static_cast<uint32_t>(fileRequests->metaDataFileSize));
             } else {
                 startSendingFile();
             }

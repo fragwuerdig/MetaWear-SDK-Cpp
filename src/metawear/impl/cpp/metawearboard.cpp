@@ -648,7 +648,7 @@ const unordered_map<uint8_t, const char*> FRIENDLY_NAMES = {
     { MBL_MW_MODULE_TIMER, "Timer" },
     { MBL_MW_MODULE_I2C, "SerialPassthrough" },
     { MBL_MW_MODULE_MACRO, "Macro" },
-    { MBL_MW_MODULE_GSR, "Conductance" },
+    { MBL_MW_MODULE_CONDUCTANCE, "Conductance" },
     { MBL_MW_MODULE_SETTINGS, "Settings" },
     { MBL_MW_MODULE_BAROMETER, "Barometer" },
     { MBL_MW_MODULE_GYRO, "Gyro" },
@@ -661,7 +661,7 @@ const unordered_map<uint8_t, const char*> FRIENDLY_NAMES = {
     { MBL_MW_MODULE_DEBUG, "Debug" }
 };
 MblMwModuleInfo* mbl_mw_metawearboard_get_module_info(const MblMwMetaWearBoard* board, uint32_t* size) {
-    *size = board->module_info.size();
+    *size = static_cast<uint32_t>(board->module_info.size());
     MblMwModuleInfo* info = (MblMwModuleInfo*) malloc(sizeof(MblMwModuleInfo) * (*size));
 
     vector<uint8_t> sorted_keys;
