@@ -15,10 +15,10 @@
 
 #include "metawear/processor/comparator.h"
 #include "metawear/processor/delta.h"
-#include "metawear/processor/math_processor.h"
+#include "metawear/processor/math.h"
 #include "metawear/processor/pulse.h"
 #include "metawear/processor/threshold.h"
-#include "metawear/processor/time_delay.h"
+#include "metawear/processor/time.h"
 
 #include <algorithm>
 #include <cmath>
