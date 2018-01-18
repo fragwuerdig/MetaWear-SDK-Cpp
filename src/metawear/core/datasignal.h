@@ -27,6 +27,7 @@ METAWEAR_API MblMwDataSignal* mbl_mw_datasignal_get_component(const MblMwDataSig
 /**
  * Subscribes to a data stream, processing messages with the given handler
  * @param signal                Data signal to subscribe to
+ * @param context               Pointer to additional data for the callback function
  * @param received_data         Callback function to handle data received from the signal
  */
 METAWEAR_API void mbl_mw_datasignal_subscribe(MblMwDataSignal *signal, void *context, MblMwFnData received_data);
@@ -60,6 +61,7 @@ METAWEAR_API void mbl_mw_datasignal_read_with_parameters(const MblMwDataSignal* 
 /**
  * Creates an MblMwDataLogger for the signal
  * @param signal                Data signal to log
+ * @param context               Pointer to additional data for the callback function
  * @param logger_ready          Callback function to be executed when the logger is created
  */
 METAWEAR_API void mbl_mw_datasignal_log(MblMwDataSignal *signal, void *context, MblMwFnDataLoggerPtr logger_ready);

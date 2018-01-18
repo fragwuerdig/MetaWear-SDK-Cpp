@@ -38,6 +38,7 @@ typedef struct {
 
 /**
  * Definition for callback functions that handle data from an MblMwDataSignal
+ * @param context       Pointer to the context the enclosing function was called with
  * @param data          Data returned from the signal
  */
 typedef void (*MblMwFnData)(void *context, const MblMwData* data);

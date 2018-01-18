@@ -89,6 +89,11 @@ void mbl_mw_debug_reset_after_gc(const MblMwMetaWearBoard *board) {
     SEND_COMMAND;
 }
 
+void mbl_mw_debug_enable_power_save(const MblMwMetaWearBoard *board) {
+    uint8_t command[2]= {MBL_MW_MODULE_DEBUG, ORDINAL(DebugRegister::POWER_SAVE)};
+    SEND_COMMAND;
+}
+
 void mbl_mw_debug_read_schedule_queue_usage(const MblMwMetaWearBoard *board, void *context, MblMwFnData handler) {
     if (board->module_info.at(MBL_MW_MODULE_DEBUG).revision >= RES_MONITOR_REVISION) {
         GET_DEBUG_STATE(board)->schedule_queue_context = context;

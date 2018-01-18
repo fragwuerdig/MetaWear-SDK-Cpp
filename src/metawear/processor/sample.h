@@ -16,6 +16,7 @@ extern "C" {
  * to the user via a callback function.
  * @param source                Data signal providing the input for the processor
  * @param bin_size              Number of samples to hold before letting data through
+ * @param context               Pointer to additional data for the callback function
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_sample_create(MblMwDataSignal *source, uint8_t bin_size,

@@ -53,6 +53,7 @@ typedef struct {
     void *context;
     /** 
      * Writes the characteristic and value to the device
+     * @param context               Pointer to the <code>context</code> field
      * @param caller            Object using this function pointer
      * @param characteristic    Gatt characteristic to write
      * @param value             Value to write as a byte array
@@ -62,6 +63,7 @@ typedef struct {
             const uint8_t* value, uint8_t length);
     /**
      * Reads the value of the characteristic from the device
+     * @param context               Pointer to the <code>context</code> field
      * @param caller                Object using this function pointer
      * @param characteristic        Gatt characteristic to read
      * @param handler               Callback function to handle the received value
@@ -69,6 +71,7 @@ typedef struct {
     void (*read_gatt_char)(void *context, const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler);
     /**
      * Enables notifications for characeristic changes
+     * @param context               Pointer to the <code>context</code> field
      * @param caller                Object using this function pointer
      * @param characteristic        Characteristic to enable notifications for
      * @param handler               Callback function for handling characteristic notifications
@@ -77,6 +80,7 @@ typedef struct {
     void (*enable_notifications)(void *context, const void* caller, const MblMwGattChar* characteristic, MblMwFnIntVoidPtrArray handler, MblMwFnVoidVoidPtrInt ready);
     /**
      * Register a handler for disconnect events
+     * @param context               Pointer to the <code>context</code> field
      * @param caller                Object using this function pointer
      * @param handler               Handler to respond to the disconnect event
      */

@@ -16,8 +16,9 @@ extern "C" {
 
 /**
  * Subscribe to the data produced by the signal
- * @param signal            Calling object
- * @param data_handler      Callback function to handle data received from the signal
+ * @param signal                Calling object
+ * @param context               Pointer to additional data for the callback function
+ * @param data_handler          Callback function to handle data received from the signal
  */
 METAWEAR_API void mbl_mw_anonymous_datasignal_subscribe(MblMwAnonymousDataSignal* signal, void *context, MblMwFnData data_handler);
 /**

@@ -1,4 +1,4 @@
-from common import TestMetaWearBase, to_string_buffer
+from common import TestMetaWearBase, to_string_buffer, to_ubyte_pointer
 from ctypes import *
 from logdata import *
 from mbientlab.metawear.cbindings import *
@@ -56,6 +56,42 @@ class TestMetaWearBoard(TestMetaWearBase):
         actual = self.libmetawear.mbl_mw_metawearboard_get_device_information(self.board)
 
         self.assertEqual(actual.contents, expected)
+
+    def test_module_info(self):
+        expected = [
+            ModuleInfo(name = b"Switch", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Led", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Accelerometer", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 1),
+            ModuleInfo(name = b"Temperature", extra = to_ubyte_pointer([0x00, 0x01]), extra_len = 2, present = 1, implementation = 1, revision = 0),
+            ModuleInfo(name = b"Gpio", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"NeoPixel", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"IBeacon", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Haptic", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"DataProcessor", extra = to_ubyte_pointer([0x1c]), extra_len = 1, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Event", extra = to_ubyte_pointer([0x1c]), extra_len = 1, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Logging", extra = to_ubyte_pointer([0x08, 0x80, 0x31, 0x00, 0x00]), extra_len = 5, present = 1, implementation = 0, revision = 2),
+            ModuleInfo(name = b"Timer", extra = to_ubyte_pointer([0x08]), extra_len = 1, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"SerialPassthrough", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Macro", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Conductance", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Settings", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 0),
+            ModuleInfo(name = b"Barometer", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Gyro", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"AmbientLight", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Magnetometer", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Humidity", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Color", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Proximity", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"SensorFusion", extra = to_ubyte_pointer([]), extra_len = 0, present = 0, implementation = 0xff, revision = 0xff),
+            ModuleInfo(name = b"Debug", extra = to_ubyte_pointer([]), extra_len = 0, present = 1, implementation = 0, revision = 2)
+        ]
+
+        size= c_uint(0)
+        temp = self.libmetawear.mbl_mw_metawearboard_get_module_info(self.board, byref(size))
+        actual = [temp[i] for i in range(size.value)]
+
+        self.maxDiff = None
+        self.assertEqual(actual, expected)
 
 class TestMetaWearBoardInitialize(TestMetaWearBase):
     def test_reinitialize(self):

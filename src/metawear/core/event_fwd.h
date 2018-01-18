@@ -18,6 +18,7 @@ typedef struct MblMwEvent MblMwEvent;
 
 /**
  * Definition for callback functions that accept an MblMwEvent pointer and an int32
+ * @param context       Pointer to the context the enclosing function was called with
  * @param event         Event to be used with the function
  * @param status        Status code passed into the function
  */

@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 /**
- * Wrapper class holding Characteristics under the
+ * Wrapper class holding characteristics under the
  * <a href="https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.device_information.xml">Device Information</a>
  * GATT service
  */
@@ -34,6 +34,15 @@ typedef struct {
     const char* firmware_revision;      ///< Revision of the firmware on the device, characteristic 0x2A26
     const char* hardware_revision;      ///< Revision of the hardware on the device, characteristic 0x2A27
 } MblMwDeviceInformation;
+
+typedef struct {
+    const char* name;
+    const uint8_t* extra;
+    uint8_t extra_len;
+    uint8_t present;
+    uint8_t implementation;
+    uint8_t revision;
+} MblMwModuleInfo;
 
 /**
  * @deprecated As of v0.5.0 and will be removed in v1.0.0.  Use mbl_mw_metawearboard_notify_char_changed instead.
@@ -74,6 +83,7 @@ METAWEAR_API void mbl_mw_metawearboard_set_time_for_response(MblMwMetaWearBoard*
 /**
  * Initialize the API's internal state.  This function is non-blocking and will alert the caller when the operation is complete.
  * @param board         Board to initialize
+ * @param context       Pointer to additional data for the callback function
  * @param initialized   Callback function to be executed when the board is initialized
  */
 METAWEAR_API void mbl_mw_metawearboard_initialize(MblMwMetaWearBoard *board, void *context, MblMwFnBoardPtrInt initialized);
@@ -116,6 +126,14 @@ METAWEAR_API const char* mbl_mw_metawearboard_get_model_name(const MblMwMetaWear
 METAWEAR_API const MblMwDeviceInformation* mbl_mw_metawearboard_get_device_information(const MblMwMetaWearBoard* board);
 
 /**
+ * Returns information about the onboard modules
+ * @param board             Calling object
+ * @param size              Pointer to where the size of the returned array will be written to
+ * @return Array of info objects
+ */
+METAWEAR_API MblMwModuleInfo* mbl_mw_metawearboard_get_module_info(const MblMwMetaWearBoard* board, uint32_t* size);
+
+/**
  * Serializes the API state.  The memory allocated by the function must be freed by calling mbl_mw_memory_free.
  * @param board         Board to serialize
  * @param size          Pointer to where the size of the returned byte array will be written to
@@ -135,6 +153,7 @@ METAWEAR_API int32_t mbl_mw_metawearboard_deserialize(MblMwMetaWearBoard* board,
  * Reads the current state of the board and creates anonymous data signals based on what data is being logged,  If this task failed, a 
  * null pointer will be passed into the `anonymous_signals` parameter
  * @param board         Calling object
+ * @param context       Pointer to additional data for the callback function
  * @param created       Callback function to be executed once the task is completed.
  */
 METAWEAR_API void mbl_mw_metawearboard_create_anonymous_datasignals(MblMwMetaWearBoard* board, void *context, MblMwFnAnonSignalArray created);

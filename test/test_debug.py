@@ -26,6 +26,12 @@ class TestDebug(TestMetaWearBase):
         self.libmetawear.mbl_mw_debug_reset_after_gc(self.board)
         self.assertEqual(self.command, expected)
 
+    def test_mbl_mw_debug_enable_power_save(self):
+        expected= [0xfe, 0x07]
+
+        self.libmetawear.mbl_mw_debug_enable_power_save(self.board)
+        self.assertEqual(self.command, expected)
+
     def test_stack_overflow_disable(self):
         expected = [0xfe, 0x09, 0x00]
 

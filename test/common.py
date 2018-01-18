@@ -444,3 +444,12 @@ def to_string_buffer(bytes):
         i= i + 1
 
     return buffer
+
+def to_ubyte_pointer(bytes):
+    arr = (c_ubyte * len(bytes))()
+    i = 0
+    for b in bytes:
+        arr[i] = b
+        i = i + 1
+
+    return arr

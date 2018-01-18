@@ -633,6 +633,58 @@ const MblMwDeviceInformation* mbl_mw_metawearboard_get_device_information(const 
     return dev_info;
 }
 
+const unordered_map<uint8_t, const char*> FRIENDLY_NAMES = {
+    { MBL_MW_MODULE_SWITCH, "Switch" },
+    { MBL_MW_MODULE_LED, "Led" },
+    { MBL_MW_MODULE_ACCELEROMETER, "Accelerometer" },
+    { MBL_MW_MODULE_TEMPERATURE, "Temperature" },
+    { MBL_MW_MODULE_GPIO, "Gpio" },
+    { MBL_MW_MODULE_NEO_PIXEL, "NeoPixel" },
+    { MBL_MW_MODULE_IBEACON, "IBeacon" },
+    { MBL_MW_MODULE_HAPTIC, "Haptic" },
+    { MBL_MW_MODULE_DATA_PROCESSOR, "DataProcessor" },
+    { MBL_MW_MODULE_EVENT, "Event" },
+    { MBL_MW_MODULE_LOGGING, "Logging" },
+    { MBL_MW_MODULE_TIMER, "Timer" },
+    { MBL_MW_MODULE_I2C, "SerialPassthrough" },
+    { MBL_MW_MODULE_MACRO, "Macro" },
+    { MBL_MW_MODULE_GSR, "Conductance" },
+    { MBL_MW_MODULE_SETTINGS, "Settings" },
+    { MBL_MW_MODULE_BAROMETER, "Barometer" },
+    { MBL_MW_MODULE_GYRO, "Gyro" },
+    { MBL_MW_MODULE_AMBIENT_LIGHT, "AmbientLight" },
+    { MBL_MW_MODULE_MAGNETOMETER, "Magnetometer" },
+    { MBL_MW_MODULE_HUMIDITY, "Humidity" },
+    { MBL_MW_MODULE_COLOR_DETECTOR, "Color" },
+    { MBL_MW_MODULE_PROXIMITY, "Proximity" },
+    { MBL_MW_MODULE_SENSOR_FUSION, "SensorFusion" },
+    { MBL_MW_MODULE_DEBUG, "Debug" }
+};
+MblMwModuleInfo* mbl_mw_metawearboard_get_module_info(const MblMwMetaWearBoard* board, uint32_t* size) {
+    *size = board->module_info.size();
+    MblMwModuleInfo* info = (MblMwModuleInfo*) malloc(sizeof(MblMwModuleInfo) * (*size));
+
+    vector<uint8_t> sorted_keys;
+    for (auto it : board->module_info) {
+        sorted_keys.push_back(it.first);
+    }
+    sort(sorted_keys.begin(), sorted_keys.end());
+
+    auto temp = info;
+    for(auto it: sorted_keys) {
+        auto value = &board->module_info.at(it);
+        temp->name = FRIENDLY_NAMES.at(it);
+        temp->extra = value->extra.data();
+        temp->extra_len = value->extra.size();
+        temp->present = value->present ? 1 : 0;
+        temp->implementation = value->implementation;
+        temp->revision = value->revision;
+        temp++;
+    }
+
+    return info;
+}
+
 uint8_t* mbl_mw_metawearboard_serialize(const MblMwMetaWearBoard* board, uint32_t* size) {
     vector<uint8_t> serialized_state;
 

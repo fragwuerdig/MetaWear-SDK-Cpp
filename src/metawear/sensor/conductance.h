@@ -44,7 +44,7 @@ METAWEAR_API void mbl_mw_conductance_calibrate(const MblMwMetaWearBoard *board);
 /**
  * Sets the conductance measurment mode
  * @param board     Pointer to the board to modify
- * @param mode      Mode value to set
+ * @param range     Range of the conductance values
  */
 METAWEAR_API void mbl_mw_conductance_set_range(MblMwMetaWearBoard *board, MblMwConductanceRange range);
 

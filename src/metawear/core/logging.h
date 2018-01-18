@@ -23,17 +23,19 @@ extern "C" {
  */
 typedef struct {
     /**
-     * Provides the calling function the ability to pass any context specific data required
+     * Pointer to additional data for the callback functions
      */
     void *context;
     /**
      * Called when a progress update is received
+     * @param context               Pointer to the <code>context</code> field
      * @param entries_left          Number of entries left to download
      * @param total_entries         Total number of entries
      */
     void (*received_progress_update)(void *context, uint32_t entries_left, uint32_t total_entries);
     /**
      * Called when a log entry has been received but cannot be matched to a log handler
+     * @param context               Pointer to the <code>context</code> field
      * @param id                    Id of the received log entry
      * @param epoch                 Number of milliseconds since epoch
      * @param data                  Byte array holding the data
@@ -97,6 +99,7 @@ METAWEAR_API void mbl_mw_logger_remove(MblMwDataLogger* logger);
 /**
  * Subscribes to responses from the data logger
  * @param logger                Logger to subscribe to
+ * @param context               Pointer to additional data for the callback function
  * @param received_data         Callback function to handle data received from the logger
  */
 METAWEAR_API void mbl_mw_logger_subscribe(MblMwDataLogger* logger, void *context, MblMwFnData received_data);

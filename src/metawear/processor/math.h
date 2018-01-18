@@ -34,6 +34,7 @@ typedef enum {
  * @param source                Data signal providing the input for the processor
  * @param op                    Math operation to compute
  * @param rhs                   Right hand side of the operation that requires 2 inputs
+ * @param context               Pointer to additional data for the callback function
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
@@ -44,6 +45,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_math_create(MblMwDataSignal *source, M
  * @param source                Data signal providing the input for the processor
  * @param op                    Math operation to compute
  * @param rhs                   Right hand side of the operation that requires 2 inputs
+ * @param context               Pointer to additional data for the callback function
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_signed(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
@@ -54,6 +56,7 @@ METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_signed(MblMwDataSignal *so
  * @param source                Data signal providing the input for the processor
  * @param op                    Math operation to compute
  * @param rhs                   Right hand side of the operation that requires 2 inputs
+ * @param context               Pointer to additional data for the callback function
  * @param processor_created     Callback function to be executed when the processor is created
  */
 METAWEAR_API int32_t mbl_mw_dataprocessor_math_create_unsigned(MblMwDataSignal *source, MblMwMathOperation op, float rhs,
