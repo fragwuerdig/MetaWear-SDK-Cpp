@@ -8,6 +8,7 @@
 
 float bosch_get_data_scale(const MblMwMetaWearBoard *board);
 
+void free_accelerometer_bosch(MblMwMetaWearBoard *board);
 void init_accelerometer_bmi160(MblMwMetaWearBoard *board);
 void init_accelerometer_bma255(MblMwMetaWearBoard *board);
 

@@ -1,11 +1,14 @@
 #include "version.h"
 
 #include <cstdlib>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <sstream>
 #include <vector>
 
 using std::atoi;
+using std::length_error;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -21,13 +24,8 @@ Version::Version(const string& version) {
 }
 
 Version::Version(uint8_t major, uint8_t minor, uint8_t step) {
-    this->major= major;
-    this->minor= minor;
-    this->step= step;
-
-    stringstream buffer;
-    buffer << major << SEPARATOR << minor << SEPARATOR << step;
-    sem_ver = buffer.str();
+    uint8_t state[3] = { step, minor, major }, *ptr = state;
+    deserialize(&ptr);
 }
 
 void Version::deserialize(uint8_t** state_stream) {
@@ -37,7 +35,7 @@ void Version::deserialize(uint8_t** state_stream) {
     ++(*state_stream);
 
     stringstream buffer;
-    buffer << major << SEPARATOR << minor << SEPARATOR << step;
+    buffer << (int) major << SEPARATOR << (int) minor << SEPARATOR << (int) step;
     sem_ver = buffer.str();
 }
 
@@ -70,6 +68,9 @@ void Version::assign(const std::string& new_version) {
         parts.push_back(tempStr);
     }
 
+    if (parts.size() != 3) {
+        throw length_error("version string \'" + new_version + "\' did not split into 3 elements");
+    }
     major = atoi(parts.at(0).c_str());
     minor = atoi(parts.at(1).c_str());
     step = atoi(parts.at(2).c_str());

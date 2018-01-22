@@ -608,8 +608,10 @@ void tear_down_logging(void *state, bool preserve_memory) {
 
 void disconnect_logging(MblMwMetaWearBoard* board) {
     auto state = GET_LOGGER_STATE(board);
-    for(auto it: state->latest_tick) {
-        state->rollback_timestamps[it.first] = it.second;
+    if (state != nullptr) {
+        for(auto it: state->latest_tick) {
+            state->rollback_timestamps[it.first] = it.second;
+        }
     }
 }
 

@@ -31,6 +31,7 @@ typedef enum {
  */
 typedef struct {
     int64_t epoch;                  ///< Number of milliseconds since epoch
+    void* extra;                    ///< Extra information attached to this data sample
     void* value;                    ///< Pointer to the data value 
     MblMwDataTypeId type_id;        ///< ID represnting the data type the value pointer points to
     uint8_t length;                 ///< Size of the value

@@ -133,6 +133,10 @@ void init_sensor_fusion_module(MblMwMetaWearBoard* board) {
     }
 }
 
+void free_sensor_fusion_module(MblMwMetaWearBoard* board) {
+    transient_states.erase(board);
+}
+
 void serialize_sensor_fusion_config(const MblMwMetaWearBoard *board, std::vector<uint8_t>& state) {
     SERIALIZE_MODULE_CONFIG(SensorFusionState, MBL_MW_MODULE_SENSOR_FUSION);
 }

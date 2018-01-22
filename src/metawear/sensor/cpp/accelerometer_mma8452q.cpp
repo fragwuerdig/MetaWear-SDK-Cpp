@@ -229,6 +229,10 @@ void init_accelerometer_mma8452q(MblMwMetaWearBoard *board) {
     states.insert({board, newState});
 }
 
+void free_accelerometer_mma8452q(MblMwMetaWearBoard *board) {
+    states.erase(board);
+}
+
 void serialize_accelerometer_mma8452q_config(const MblMwMetaWearBoard* board, std::vector<uint8_t>& state) {
     SERIALIZE_MODULE_CONFIG(Mma8452qConfig, MBL_MW_MODULE_ACCELEROMETER);
 }
@@ -323,6 +327,7 @@ void create_acc_mma8452q_uri(const MblMwDataSignal* signal, stringstream& uri) {
         uri << "orientation";
         break;
     }
+    GET_DATA_SIGNAL(MMA8452Q_ORIENTATION_RESPONSE_HEADER);
 }
 
 MblMwDataSignal* mbl_mw_acc_mma8452q_get_orientation_detection_data_signal(const MblMwMetaWearBoard* board) {

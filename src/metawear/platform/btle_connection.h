@@ -53,7 +53,7 @@ typedef struct {
     void *context;
     /** 
      * Writes the characteristic and value to the device
-     * @param context               Pointer to the <code>context</code> field
+     * @param context           Pointer to the <code>context</code> field
      * @param caller            Object using this function pointer
      * @param characteristic    Gatt characteristic to write
      * @param value             Value to write as a byte array

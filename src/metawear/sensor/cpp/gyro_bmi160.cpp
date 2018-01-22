@@ -107,6 +107,10 @@ void init_gyro_module(MblMwMetaWearBoard *board) {
     }
 }
 
+void free_gyro_module(MblMwMetaWearBoard *board) {
+    states.erase(board);
+}
+
 MblMwDataSignal* mbl_mw_gyro_bmi160_get_rotation_data_signal(const MblMwMetaWearBoard *board) {
     GET_DATA_SIGNAL(GYRO_ROT_RESPONSE_HEADER);
 }

@@ -285,6 +285,10 @@ void init_accelerometer_bma255(MblMwMetaWearBoard *board) {
     init_accelerometer_bosch(board, new_config);
 }
 
+void free_accelerometer_bosch(MblMwMetaWearBoard *board) {
+    states.erase(board);
+}
+
 void serialize_accelerometer_bmi160_config(const MblMwMetaWearBoard* board, vector<uint8_t>& state) {
     SERIALIZE_MODULE_CONFIG(AccBmi160Config, MBL_MW_MODULE_ACCELEROMETER);
 }

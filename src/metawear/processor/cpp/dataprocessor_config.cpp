@@ -31,6 +31,10 @@ using std::malloc;
 using std::min;
 using std::memset;
 
+uint8_t get_accounter_type(const MblMwDataProcessor* source) {
+    return ((AccounterConfig*)source->config)->mode;
+}
+
 uint8_t get_accounter_length(const MblMwDataProcessor* source) {
     return ((AccounterConfig*)source->config)->length + 1;
 }
@@ -39,21 +43,28 @@ uint8_t get_accounter_prescale(const MblMwDataProcessor* source) {
     return ((AccounterConfig*)source->config)->prescale + 1;
 }
 
-int32_t mbl_mw_dataprocessor_accounter_create(MblMwDataSignal *source, void *context, MblMwFnDataProcessor processor_created) {
-    const uint8_t length = 4;   // Fix to 4 byte length for now
-    if (source->length() + length + 3 >= BLE_PACKET_SIZE) {
-        return MBL_MW_STATUS_ERROR_UNSUPPORTED_PROCESSOR;
-    }
-
+static int32_t create_accounter_processor(MblMwDataSignal *source, uint8_t mode, uint8_t length, void *context, MblMwFnDataProcessor processor_created) {
     AccounterConfig config;
     memset(&config, 0, sizeof(AccounterConfig));
-    config.mode = 0x1;
+    config.mode = mode;
     config.length = (length - 1);
     config.prescale = 0x3; // This is what the logger uses, so we follow suit for now
 
     create_processor(source, MblMwDataProcessor::transform(source, type_to_id.at(DataProcessorType::ACCOUNTER), &config), context, processor_created);
     
     return MBL_MW_STATUS_OK;
+}
+
+int32_t mbl_mw_dataprocessor_accounter_create(MblMwDataSignal *source, void *context, MblMwFnDataProcessor processor_created) {
+    const uint8_t length = 4;   // Fix to 4 byte length for now
+    return source->length() + length + 3 >= BLE_PACKET_SIZE ? MBL_MW_STATUS_ERROR_UNSUPPORTED_PROCESSOR : 
+            create_accounter_processor(source, ACCOUNTER_TIME, length, context, processor_created);
+}
+
+int32_t mbl_mw_dataprocessor_accounter_create_count(MblMwDataSignal *source, void *context, MblMwFnDataProcessor processor_created) {
+    int8_t length = min(4, BLE_PACKET_SIZE - 3 - source->length());
+    return length < 0 ? MBL_MW_STATUS_ERROR_UNSUPPORTED_PROCESSOR : 
+            create_accounter_processor(source, ACCOUNTER_COUNT, (uint8_t) length, context, processor_created);
 }
 
 static int32_t create_accumulator_processor(MblMwDataSignal *source, uint8_t n_channels, uint8_t channel_size, 
