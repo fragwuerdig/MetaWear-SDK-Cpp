@@ -327,7 +327,6 @@ void create_acc_mma8452q_uri(const MblMwDataSignal* signal, stringstream& uri) {
         uri << "orientation";
         break;
     }
-    GET_DATA_SIGNAL(MMA8452Q_ORIENTATION_RESPONSE_HEADER);
 }
 
 MblMwDataSignal* mbl_mw_acc_mma8452q_get_orientation_detection_data_signal(const MblMwMetaWearBoard* board) {
